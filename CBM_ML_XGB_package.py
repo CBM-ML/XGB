@@ -12,8 +12,8 @@ from bayes_opt import BayesianOptimization
 from data_cleaning import clean_df
 from KFPF_lambda_cuts import KFPF_lambda_cuts
 from plot_tools import AMS, preds_prob, plot_confusion_matrix
-import uproot
 import gc
+from tree_importer import tree_importer
 
 #To save some memory we will delete unused variables
 class TestClass(object): 
@@ -28,20 +28,14 @@ executor = ThreadPoolExecutor(8)
 
 
 # We import three root files into our jupyter notebook
-signal= pd.DataFrame(data=uproot.open('/home/shahid/cbmsoft/Data/PFSimplePlainTreeSignal.root:PlainTree',
-                                           library='pd', decompression_executor=executor,
-                                  interpretation_executor=executor).arrays(library='np',
-                                decompression_executor=executor, interpretation_executor=executor))
+signal= tree_importer('/home/shahid/cbmsoft/Data/PFSimplePlainTreeSignal.root','PlainTree')
 
 # We only select lambda candidates
 sgnal = signal[(signal['LambdaCandidates_is_signal']==1) & (signal['LambdaCandidates_mass']>1.108)
                & (signal['LambdaCandidates_mass']<1.1227)]
 
 # Similarly for the background
-background = pd.DataFrame(data=uproot.open('/home/shahid/cbmsoft/Data/PFSimplePlainTreeBackground.root:PlainTree',
-                                           library='pd', decompression_executor=executor,
-                                  interpretation_executor=executor).arrays(library='np',
-                                decompression_executor=executor, interpretation_executor=executor))
+background = tree_importer('/home/shahid/cbmsoft/Data/PFSimplePlainTreeBackground.root','PlainTree')
 bg = background[(background['LambdaCandidates_is_signal'] == 0)
                 & ((background['LambdaCandidates_mass'] > 1.07)
                 & (background['LambdaCandidates_mass'] < 1.108) | (background['LambdaCandidates_mass']>1.1227) 
@@ -52,9 +46,7 @@ del signal
 del background
 
 #we also import a 10k events data set, generated using URQMD with AuAu collisions at 12AGeV
-file = uproot.open('/home/shahid/cbmsoft/Data/10k_events_PFSimplePlainTree.root:PlainTree', library='pd', decompression_executor=executor,
-                                  interpretation_executor=executor).arrays(library='np',decompression_executor=executor,
-                                  interpretation_executor=executor)
+file = tree_importer('/home/shahid/cbmsoft/Data/10k_events_PFSimplePlainTree.root','PlainTree')
 #Call the python garbage collector to clean up things
 gc.collect()
 df_original= pd.DataFrame(data=file)
@@ -219,4 +211,3 @@ axs[1].tick_params(axis='both', which='major', labelsize=15)
 
 plt.show()
 fig.tight_layout()
-fig.savefig("whole_sample_invmass_with_ML.png")
