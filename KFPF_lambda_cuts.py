@@ -1,3 +1,8 @@
+"""
+The following code selects lambda candidates on the basis of manually selected selection criteria.
+
+"""
+
 def KFPF_lambda_cuts(df):
     KFPF_lambda= df.copy()
     KFPF_lambda['new_signal']=0
