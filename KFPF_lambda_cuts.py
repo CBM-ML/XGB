@@ -1,5 +1,7 @@
 """
-The following code selects lambda candidates on the basis of manually selected selection criteria.
+In the already existing Kalman Filter Particle Finder (KFPF) package for online reconstruction and selection of short-lived particles in CBM, these criteria
+have been manually optimized. These selection-cuts have been selected to maximize the signal to background ratio (S/B) of the $\Lambda$ for a certain energy
+on a collisions generator. The selection criteria mainly depends on the collision energy, decay channel and detector configuration.
 
 """
 
