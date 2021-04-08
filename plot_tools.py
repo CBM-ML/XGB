@@ -1,10 +1,11 @@
 from sklearn.metrics import roc_auc_score, roc_curve
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy import sqrt, log, argmax
+import itertools
 
 
 def AMS(y_true, y_predict, y_true1, y_predict1):
-    from numpy import sqrt, log, argmax
     roc_auc=roc_auc_score(y_true, y_predict)
     fpr, tpr, thresholds = roc_curve(y_true, y_predict,drop_intermediate=False ,pos_label=1)
     S0 = sqrt(2 * ((tpr + fpr) * log((1 + tpr/fpr)) - tpr))
@@ -51,7 +52,7 @@ def preds_prob(df, preds, true):
     plt.legend()
     plt.show()
 
-import itertools
+
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
                           title='Confusion matrix',
