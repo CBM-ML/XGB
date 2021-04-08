@@ -4,7 +4,18 @@ import matplotlib.pyplot as plt
 from numpy import sqrt, log, argmax
 import itertools
 
+"""
+A receiver operating characteristic (ROC), or simply ROC curve, is a graphical plot which illustrates the performance of a binary classifier system as its
+discrimination threshold is varied. It is created by plotting the fraction of true positives out of the positives (TPR = true positive rate) vs. the fraction
+of false positives out of the negatives (FPR = false positive rate), at various threshold settings. TPR is also known as sensitivity, and FPR is one minus the
+specificity or true negative rate.
+This function requires the true binary value and the target scores, which can either be probability estimates of the positive class, confidence values, or 
+binary decisions.
+Similarly, the function roc_auc_score computes Area Under the Receiver Operating Characteristic Curve (ROC AUC) from prediction scores.
 
+To find the best threshold which results more signal to background ratio for lambda candidates we use the parameter S0 called the approximate median significance
+by the higgs boson  ML challenge (http://higgsml.lal.in2p3.fr/documentation,9.)
+"""
 def AMS(y_true, y_predict, y_true1, y_predict1):
     roc_auc=roc_auc_score(y_true, y_predict)
     fpr, tpr, thresholds = roc_curve(y_true, y_predict,drop_intermediate=False ,pos_label=1)
@@ -52,6 +63,19 @@ def preds_prob(df, preds, true):
     plt.legend()
     plt.show()
 
+    
+ """
+ A **Confusion Matrix** $C$ is such that $C_{ij}$ is equal to the number of observations known to be in group $i$ and predicted to be in group $j$.
+ Thus in binary classification, the count of true positives is $C_{00}$, false negatives $C_{01}$,false positives is $C_{10}$, and true neagtives is $C_{11}$.
+
+If $ y^{'}_{i} $ is the predicted value of the $ i$-th sample and $y_{i}$ is the corresponding true value, then the fraction of correct predictions over
+$ n_{samples}$ is defined as 
+$$
+True \: positives (y,y^{'}) =  \sum_{i=1}^{n_{samples} } 1 (y^{'}_{i} = y_{i}=1)
+$$ 
+
+The following function prints and plots the confusion matrix. Normalization can be applied by setting `normalize=True`.
+ """
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
