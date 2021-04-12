@@ -65,8 +65,8 @@ def preds_prob(df, preds, true):
     plt.show()
 
     
- """
- A **Confusion Matrix** $C$ is such that $C_{ij}$ is equal to the number of observations known to be in group $i$ and predicted to be in group $j$.
+"""
+A **Confusion Matrix** $C$ is such that $C_{ij}$ is equal to the number of observations known to be in group $i$ and predicted to be in group $j$.
  Thus in binary classification, the count of true positives is $C_{00}$, false negatives $C_{01}$,false positives is $C_{10}$, and true neagtives is $C_{11}$.
 
 If $ y^{'}_{i} $ is the predicted value of the $ i$-th sample and $y_{i}$ is the corresponding true value, then the fraction of correct predictions over
@@ -76,7 +76,7 @@ True \: positives (y,y^{'}) =  \sum_{i=1}^{n_{samples} } 1 (y^{'}_{i} = y_{i}=1)
 $$ 
 
 The following function prints and plots the confusion matrix. Normalization can be applied by setting `normalize=True`.
- """
+"""
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
