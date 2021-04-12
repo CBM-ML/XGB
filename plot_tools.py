@@ -107,3 +107,44 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
     plt.ylabel('True label',fontsize = 15)
     plt.xlabel('Predicted label',fontsize = 15)
+
+
+"""
+The function comparison compares the results of XGB and KFPF (manual selection cuts)
+"""
+from matplotlib import gridspec
+def comaprison_XGB_KFPF(XGB_mass,KFPF_mass):
+    range1= (1.0999, 1.17)
+    fig, axs = plt.subplots(2, 1,figsize=(15,10), sharex=True,  gridspec_kw={'width_ratios': [10],
+                           'height_ratios': [8,4]})
+
+    ns, bins, patches=axs[0].hist((XGB_mass),bins = 300, range=range1, facecolor='red',alpha = 0.3)
+    ns1, bins1, patches1=axs[0].hist((KFPF_mass),bins = 300, range=range1,facecolor='blue',alpha = 0.3)
+
+    axs[0].set_ylabel("counts", fontsize = 15)
+    axs[0].legend(('XGBoost Selected $\Lambda$s','KFPF selected $\Lambda$s'), fontsize = 15, loc='upper right')
+
+    #plt.rcParams["legend.loc"] = 'upper right'
+    axs[0].set_title("The lambda's Invariant Mass histogram with KFPF and XGB selection criteria on KFPF variables", fontsize = 15)
+    axs[0].grid()
+    axs[0].tick_params(axis='both', which='major', labelsize=15)
+
+
+    hist1, bin_edges1 = np.histogram(XGB_mass,range=(1.09, 1.17), bins=300)
+    hist2, bin_edges2 = np.histogram(KFPF_mass,range=(1.09, 1.17), bins=300)
+
+    #makes sense to have only positive values 
+    diff = (hist1 - hist2)
+    axs[1].bar(bins[:-1],     # this is what makes it comparable
+        ns / ns1, # maybe check for div-by-zero!
+        width=0.001)
+    plt.xlabel("Mass in $\dfrac{GeV}{c^2}$", fontsize = 15)
+    axs[1].set_ylabel("XGB / KFPF", fontsize = 15)
+    axs[1].grid()
+    axs[1].tick_params(axis='both', which='major', labelsize=15)
+
+    plt.show()
+    fig.tight_layout()
+
+
+    
