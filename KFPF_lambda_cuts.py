@@ -1,7 +1,7 @@
 """
-In the already existing Kalman Filter Particle Finder (KFPF) package for online reconstruction and selection of short-lived particles in CBM, these criteria
-have been manually optimized. These selection-cuts have been selected to maximize the signal to background ratio (S/B) of the $\Lambda$ for a certain energy
-on a collisions generator. The selection criteria mainly depends on the collision energy, decay channel and detector configuration.
+In the already existing Kalman Filter Particle Finder (KFPF) package for online reconstruction and selection of short-lived particles in CBM, selection criteria for
+lambda hyperion have been manually optimized. These selection-cuts have been selected to maximize the signal to background ratio (S/B) of the $\Lambda$ 
+for a certain energy on a collisions generator. The selection criteria mainly depends on the collision energy, decay channel and detector configuration.
 
 The following function takes in a data-frame as an input and returns a data frame after the application of the selection criteria.
 """
