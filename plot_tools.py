@@ -47,11 +47,11 @@ def AMS(y_true, y_predict, y_true1, y_predict1):
     fig.tight_layout()
     plt.show()
 
-''''
+"""
 To visualize true MC signal in the probability distribution returned by XGB classifier for a train-test data-set, the preds_prob function can be used.
 Its input are a data-frame, predictions of the classifier (probabilities) and the target in the data-frame, and shows how the True signal is present 
 inside this probability.
-''''
+"""
 
 def preds_prob(df, preds, true):
     fig, ax = plt.subplots(figsize=(12, 8))
