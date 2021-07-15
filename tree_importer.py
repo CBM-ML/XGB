@@ -14,7 +14,7 @@ def tree_importer(path,treename, n):
     #The number of parallel processors
     executor = ThreadPoolExecutor(n)
     
-    #To open the 
+    #To open the root file and convert it to a pandas dataframe
     file = uproot.open(path+':'+treename, library='pd', decompression_executor=executor,
                                   interpretation_executor=executor).arrays(library='np',decompression_executor=executor,
                                   interpretation_executor=executor)
