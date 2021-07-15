@@ -3,7 +3,10 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pandas as pd
 """
-The tree_importer function takes in flat analysis tree and returns a pandas data-frame object. It has 3 inputs, the first one is path of the analysis tree, the second one as the tree name and third one the number of CPU cores. The first and second input should be inserted as strings i.e. path inside a single quotation '' or double quotations "". The third input should be a number. For example  tree_importer("/home/flat_trees/a.tree","PlainTree",4)
+The tree_importer function takes in flat analysis tree and returns a pandas data-frame object. It has 3 inputs, the first one is
+path of the analysis tree, the second one as the tree name and third one the number of CPU cores. The first and second input
+should be inserted as strings i.e. path inside a single quotation '' or double quotations "". The third input should be a number.
+For example  tree_importer("/home/flat_trees/a.tree","PlainTree",4)
 """
 
 def tree_importer(path,treename, n):
