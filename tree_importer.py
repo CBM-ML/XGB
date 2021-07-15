@@ -11,7 +11,8 @@ For example  tree_importer("/home/flat_trees/a.tree","PlainTree",4)
 
 def tree_importer(path,treename, n):
     labels=["LambdaCandidates_chi2geo", "LambdaCandidates_chi2primneg", "LambdaCandidates_chi2primpos",
-         "LambdaCandidates_distance", "LambdaCandidates_ldl","LambdaCandidates_mass", "LambdaCandidates_pT", "LambdaCandidates_rapidity", "LambdaCandidates_is_signal"]
+         "LambdaCandidates_distance", "LambdaCandidates_ldl","LambdaCandidates_mass", "LambdaCandidates_pT",
+            "LambdaCandidates_rapidity", "LambdaCandidates_is_signal"]
 
     new_labels=['chi2geo', 'chi2primneg','chi2primpos', 'distance', 'ldl','mass', 'pT', 'rapidity','issignal']
 
