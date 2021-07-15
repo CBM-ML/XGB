@@ -28,24 +28,26 @@ def AMS(y_true, y_predict, y_true1, y_predict1):
     xi1 = argmax(S01)
     S0_best_threshold1 = (thresholds[xi1])
 
-    fig, axs = plt.subplots(figsize=(15, 10), dpi = 100)
-    plt.plot(fpr, tpr, linestyle=':',color='darkorange',label='ROC curve train (area = %0.4f)' % roc_auc)
+    fig, ax = plt.subplots(figsize=(12, 8), dpi = 100)
+    plt.plot(fpr, tpr, linewidth=3 ,linestyle=':',color='darkorange',label='ROC curve train (area = %0.4f)' % roc_auc)
     plt.plot(fpr1, tpr1, color='green',label='ROC curve test (area = %0.4f)' % roc_auc1)
-    plt.plot([0, 1], [0, 1], color='navy', linestyle='--')
-    plt.scatter(fpr[xi], tpr[xi], marker='o', color='black', label= 'Best Threshold train set = '+"%.4f" % S0_best_threshold +'\n S0 = '+ "%.2f" % S0[xi])
-    plt.scatter(fpr1[xi1], tpr1[xi1], marker='o', color='blue', label= 'Best Threshold test set = '+"%.4f" % S0_best_threshold1 +'\n S0 = '+ "%.2f" % S01[xi1])
-    plt.xlabel('False Positive Rate', fontsize = 15)
-    plt.ylabel('True Positive Rate', fontsize = 15)
-    plt.legend(loc="lower right", fontsize = 15)
-    plt.title('Receiver operating characteristic', fontsize = 15)
+    plt.plot([0, 1], [0, 1], color='navy', linestyle='--', label='Random guess')
+    #plt.scatter(fpr[xi], tpr[xi], marker='o', color='black', label= 'Best Threshold train set = '+"%.4f" % S0_best_threshold +'\n AMS = '+ "%.2f" % S0[xi])
+    plt.scatter(fpr1[xi1], tpr1[xi1], marker='o', s=80, color='blue', label= 'Best Threshold test set = '+"%.4f" % S0_best_threshold1 +'\n AMS = '+ "%.2f" % S01[xi1])
+    plt.xlabel('False Positive Rate', fontsize = 18)
+    plt.ylabel('True Positive Rate', fontsize = 18)
+    plt.legend(loc="lower right", fontsize = 18)
+    plt.title('Receiver operating characteristic', fontsize = 18)
+    ax.tick_params(axis='both', which='major', labelsize=18)
     plt.xlim([-0.01, 1.0])
     plt.ylim([0, 1.02])
     #axs.axis([-0.01, 1, 0.9, 1])
-
+    fig.tight_layout()
+    fig.savefig('hists.png')
+    plt.show()
     return S0_best_threshold, S0_best_threshold1
 
-    fig.tight_layout()
-    plt.show()
+
 
 """
 To visualize true MC signal in the probability distribution returned by XGB classifier for a train-test data-set, the preds_prob function can be used.
@@ -53,16 +55,40 @@ Its input are a data-frame, predictions of the classifier (probabilities) and th
 inside this probability.
 """
 
-def preds_prob(df, preds, true):
+def preds_prob(df, preds, true, dataset):
+    if dataset =='train':
+        label1 = 'XGB Predictions on the training data set'
+    else:
+        label1 = 'XGB Predictions on the test data set'
     fig, ax = plt.subplots(figsize=(12, 8))
     bins1=100
-    plt.hist(df[preds], bins=bins1,facecolor='red',alpha = 0.3, label='Predicitions')
+    plt.hist(df[preds], bins=bins1,facecolor='green',alpha = 0.3, label=label1)
     TP = df[(df[true]==1)]
-    TP[preds].plot.hist(ax=ax, bins=bins1,facecolor='blue',alpha = 0.3, label='True Positives/signal in predictions')
+    TN = df[(df[true]==0)]
+    #TP[preds].plot.hist(ax=ax, bins=bins1,facecolor='blue', histtype='stepfilled',alpha = 0.3, label='True Positives/signal in predictions')
+    hist, bins = np.histogram(TP[preds], bins=bins1)
+    err = np.sqrt(hist)
+    center = (bins[:-1] + bins[1:]) / 2
+
+    
+    hist1, bins1 = np.histogram(TN[preds], bins=bins1)
+    err1 = np.sqrt(hist1)
+    plt.errorbar(center, hist1, yerr=err1, fmt='o',
+                 c='Red', label='Background in predictions')
+    
+    plt.errorbar(center, hist, yerr=err, fmt='o',
+                 c='blue', label='Signal in predictions')
+    
     ax.set_yscale('log')
-    plt.xlabel('Probability')
-    plt.legend()
+    plt.xlabel('Probability',fontsize=18)
+    plt.ylabel('Counts', fontsize=18)
+    plt.legend(fontsize=18)
+    ax.set_xticks(np.arange(0,1.1,0.1))
+    ax.tick_params(axis='both', which='major', labelsize=18)
+    ax.tick_params(axis='both', which='minor', labelsize=16)
     plt.show()
+    fig.tight_layout()
+    fig.savefig('test_best.png')
 
     
 """
@@ -147,4 +173,27 @@ def comaprison_XGB_KFPF(XGB_mass,KFPF_mass):
     fig.tight_layout()
 
 
-    
+"""
+Function that plots signal and background in the train-test data set 
+"""
+def plt_sig_back(df):
+    range1 = (1.077, 1.18)
+    fig, axs = plt.subplots(figsize=(10, 6))
+    #df_scaled['mass'].plot.hist(bins = 300, range=range1,grid=True,sharey=True)
+    (df[df['issignal']==0])['mass'].plot.hist(bins = 300, facecolor='yellow',grid=True,range=range1, label='Background')
+    (df[df['issignal']==1])['mass'].plot.hist(bins = 300, facecolor='magenta',grid=True, range=range1, label ='Signal')
+    #plt.vlines(x=1.108,ymin=-1,ymax=48000, color='black', linestyle='-')
+    #plt.vlines(x=1.1227,ymin=-1,ymax=48000, color='black', linestyle='-')
+    plt.ylabel("Counts (log scale)", fontsize=15)
+    plt.xlabel("Mass in GeV/$c^2$", fontsize= 15)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    #plt.title('Test and Train Lambda Invariant Mass', fontsize = 15)
+    plt.legend( fontsize = 15)
+    axs.tick_params(axis='both', which='major', labelsize=18)
+    axs.text(1.13, 9500, r'CBM Performance', fontsize=15)
+    axs.text(1.13, 6000, r'DCM-QGSM-SMM, Au+Au @ 12 $A$GeV/$c$', color = 'magenta',  fontsize=15)
+    axs.text(1.13, 4000, r'URQMD, Au+Au @ 12 $A$GeV/$c$', fontsize=15)
+    plt.yscale("log")
+    fig.tight_layout()
+    fig.savefig("hists.png")
