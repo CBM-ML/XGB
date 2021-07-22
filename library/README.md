@@ -4,4 +4,4 @@ For local installation follow the steps:
 
 
       git clone https://github.com/CBM-ML/XGB.git
-      pip install CBM_ML_Lambda_Library/
+      pip install CBM_ML/
