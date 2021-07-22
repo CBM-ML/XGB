@@ -3,5 +3,5 @@ This library is used in the colab (https://colab.research.google.com/drive/1Up8Y
 For local installation follow the steps:
 
 
-      git clone https://github.com/shahidzk1/CBM_ML_Lambda_Library.git
+      git clone https://github.com/CBM-ML/XGB/library.git
       pip install CBM_ML_Lambda_Library/
