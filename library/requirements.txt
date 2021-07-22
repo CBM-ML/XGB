@@ -1,0 +1,7 @@
+uproot
+matplotlib
+pandas
+numpy
+scikit-learn
+xgboost
+bayesian-optimization
