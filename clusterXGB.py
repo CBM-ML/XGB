@@ -21,14 +21,18 @@ from bayes_opt import BayesianOptimization
 
 import gc
 
-
+# Put here your path and your tree
 signal_path = '/home/olha/CBM/dataset10k_tree/dcm_1m_prim_signal.root'
 df_urqmd_path = '/home/olha/CBM/dataset10k_tree/urqmd_100k_cleaned.root'
 
 tree_name = 'PlainTree'
 
-signal= tree_importer(signal_path,tree_name, 3)
-df_urqmd = tree_importer(df_urqmd_path, tree_name,3)
+
+# How many threads we use to parallel code
+number_of_threads = 3
+
+signal= tree_importer(signal_path,tree_name, number_of_threads)
+df_urqmd = tree_importer(df_urqmd_path, tree_name, number_of_threads)
 
 background_selected = df_urqmd[(df_urqmd['issignal'] == 0) &\
                              ((df_urqmd['mass'] > 1.07) &\
