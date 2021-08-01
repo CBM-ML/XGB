@@ -25,46 +25,95 @@ import gc
 signal_path = '/home/olha/CBM/dataset10k_tree/dcm_1m_prim_signal.root'
 df_urqmd_path = '/home/olha/CBM/dataset10k_tree/urqmd_100k_cleaned.root'
 
+df_dcm_path = '/home/olha/CBM/dataset10k_tree/dcm_prim_100k_cleaned.root'
+
 tree_name = 'PlainTree'
 
 
 # How many threads we use to parallel code
 number_of_threads = 3
 
-signal= tree_importer(signal_path,tree_name, number_of_threads)
-df_urqmd = tree_importer(df_urqmd_path, tree_name, number_of_threads)
 
-background_selected = df_urqmd[(df_urqmd['issignal'] == 0) &\
-                             ((df_urqmd['mass'] > 1.07) &\
-                             (df_urqmd['mass'] < 1.108) | (df_urqmd['mass']>1.1227) &\
-                             (df_urqmd['mass'] < 1.3))]
+def data_selection(signal_path, bgr_path, tree, threads):
+
+    """
+    We have selected signal candidates only from the DCM model, therefore, we are
+    treating it as simulated data. The URQMD data set will be treated as real
+    experimental data.
+
+    Our URQMD 100k events data, which looks more like what we will get from the
+    final experiment, has a lot more background than signal. This problem of
+    unequal ratio of classes (signal and background) in our data set (URQMD,
+     99.99% background and less than 1% signal) is called imbalance classification problem.
+
+    One of the solutions to tackle this problem is resampling the data.
+    Deleting instances from the over-represented class (in our case the background),
+    under-sampling, is a resampling method.
+
+    So for training and testing we will get signal candidates from the DCM signal
+    and background from URQMD (3 times signal size).
+
+    Parameters
+    ----------
+    signal_path: str
+          path to signal file
+    bgr_path: str
+          path to background file
+    tree: str
+          name of flat tree
+    threads: int
+            how many parallel thread we want
+    """
+    signal= tree_importer(signal_path,tree_name, threads)
+    df_urqmd = tree_importer(bgr_path, tree_name, threads)
+
+    background_selected = df_urqmd[(df_urqmd['issignal'] == 0) &\
+                                 ((df_urqmd['mass'] > 1.07) &\
+                                 (df_urqmd['mass'] < 1.108) | (df_urqmd['mass']>1.1227) &\
+                                 (df_urqmd['mass'] < 1.3))]
+
+    df_scaled = pd.concat([signal, background_selected])
+    df_scaled = df_scaled.sample(frac=1)
+    df_scaled.iloc[0:10,:]
+    del signal, background_selected
+
+    return df_scaled
 
 
-#Let's combine signal and background
-df_scaled = pd.concat([signal, background_selected])
-# Let's shuffle the rows randomly
-df_scaled = df_scaled.sample(frac=1)
-# Let's take a look at the top 10 entries of the df
-df_scaled.iloc[0:10,:]
-del signal, background_selected
-
-
-# The following columns will be used to predict whether a reconstructed candidate is a lambda particle or not
-# cuts = [ 'chi2primneg', 'chi2primpos', 'ldl', 'distance', 'chi2geo']
-
+df_scaled = data_selection(signal_path, df_urqmd_path, tree_name, 4)
+df_urqmd = tree_importer(df_dcm_path, tree_name, number_of_threads)
 cuts = [ 'chi2primneg', 'chi2primpos']
 
-x = df_scaled[cuts].copy()
 
-# The MC information is saved in this y variable
-y =pd.DataFrame(df_scaled['issignal'], dtype='int')
+def train_test_set(df_scaled, cuts):
+    """
+    To make machine learning algorithms more efficient on unseen data we divide
+    our data into two sets. One set is for training the algorithm and the other
+    is for testing the algorithm. If we don't do this then the algorithm can
+    overfit and we will not capture the general trends in the data.
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=324)
+    Parameters
+    ----------
+    df_scaled: dataframe_
+          dataframe with mixed signal and bacjground
+    cuts: list(contains strings)
+          cuts
+    """
+    x = df_scaled[cuts].copy()
 
-#DMatrix is a internal data structure that used by XGBoost which is optimized for both memory efficiency and training speed.
-dtrain = xgb.DMatrix(x_train, label = y_train)
-dtest1=xgb.DMatrix(x_test, label = y_test)
+    # The MC information is saved in this y variable
+    y =pd.DataFrame(df_scaled['issignal'], dtype='int')
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=324)
 
+    #DMatrix is a internal data structure that used by XGBoost
+    # which is optimized for both memory efficiency and training speed.
+    dtrain = xgb.DMatrix(x_train, label = y_train)
+    dtest1=xgb.DMatrix(x_test, label = y_test)
+
+    return dtrain, dtest1
+
+
+dtrain, dtest = train_test_set(df_scaled, cuts)
 
 #Bayesian Optimization function for xgboost
 #specify the parameters you want to tune as keyword arguments
@@ -81,74 +130,95 @@ def bo_tune_xgb(max_depth, gamma, alpha, n_estimators ,learning_rate):
     return  cv_result['test-auc-mean'].iloc[-1]
 
 
-#Invoking the Bayesian Optimizer with the specified parameters to tune
-xgb_bo = BayesianOptimization(bo_tune_xgb, {'max_depth': (4, 10),
-                                             'gamma': (0, 1),
-                                            'alpha': (2,20),
-                                             'learning_rate':(0,1),
-                                             'n_estimators':(100,500)
-                                            })
+
+def get_best_params():
+    """
+    Performs Bayesian Optimization and looks for the best parameters
+
+    Parameters:
+           None
+    """
+    #Invoking the Bayesian Optimizer with the specified parameters to tune
+    xgb_bo = BayesianOptimization(bo_tune_xgb, {'max_depth': (4, 10),
+                                                 'gamma': (0, 1),
+                                                'alpha': (2,20),
+                                                 'learning_rate':(0,1),
+                                                 'n_estimators':(100,500)
+                                                })
+    #performing Bayesian optimization for 5 iterations with 8 steps of random exploration with an #acquisition function of expected improvement
+    xgb_bo.maximize(n_iter=1, init_points=1)
+
+    max_param = xgb_bo.max['params']
+    param= {'alpha': max_param['alpha'], 'gamma': max_param['gamma'], 'learning_rate': max_param['learning_rate'],
+     'max_depth': int(round(max_param['max_depth'],0)), 'n_estimators': int(round(max_param['n_estimators'],0)),
+      'objective': 'reg:logistic'}
+    gc.collect()
 
 
-#performing Bayesian optimization for 5 iterations with 8 steps of random exploration with an #acquisition function of expected improvement
-xgb_bo.maximize(n_iter=5, init_points=5)
+    #To train the algorithm using the parameters selected by bayesian optimization
+    #Fit/train on training data
+    bst = xgb.train(param, dtrain)
+    return bst
 
 
-max_param = xgb_bo.max['params']
-param= {'alpha': max_param['alpha'], 'gamma': max_param['gamma'], 'learning_rate': max_param['learning_rate'], 'max_depth': int(round(max_param['max_depth'],0)), 'n_estimators': int(round(max_param['n_estimators'],0)), 'objective': 'reg:logistic'}
-gc.collect()
-
-
-#To train the algorithm using the parameters selected by bayesian optimization
-#Fit/train on training data
-bst = xgb.train(param, dtrain)
-
-#predicitions on training set
-bst_train= pd.DataFrame(data=bst.predict(dtrain, output_margin=False),  columns=["xgb_preds"])
-y_train=y_train.set_index(np.arange(0,bst_train.shape[0]))
-bst_train['issignal']=y_train['issignal']
-
-
-#predictions on test set
-bst_test = pd.DataFrame(data=bst.predict(dtest1, output_margin=False),  columns=["xgb_preds"])
-y_test=y_test.set_index(np.arange(0,bst_test.shape[0]))
-bst_test['issignal']=y_test['issignal']
-
-#The following graph will show us that which features are important for the model
-ax = xgb.plot_importance(bst)
-plt.rcParams['figure.figsize'] = [5, 3]
-plt.show()
-ax.figure.tight_layout()
+# bst = get_best_params()
+#
+# #predicitions on training set
+# bst_train= pd.DataFrame(data=bst.predict(dtrain, output_margin=False),  columns=["xgb_preds"])
+# y_train=y_train.set_index(np.arange(0,bst_train.shape[0]))
+# bst_train['issignal']=y_train['issignal']
+#
+#
+# #predictions on test set
+# bst_test = pd.DataFrame(data=bst.predict(dtest1, output_margin=False),  columns=["xgb_preds"])
+# y_test=y_test.set_index(np.arange(0,bst_test.shape[0]))
+# bst_test['issignal']=y_test['issignal']
+#
+#
+# #The following graph will show us that which features are important for the model
+# ax = xgb.plot_importance(bst)
+# plt.rcParams['figure.figsize'] = [5, 3]
+# plt.show()
+# ax.figure.tight_layout()
 #ax.figure.savefig("hits.png")
 
-#ROC cures for the predictions on train and test sets
-train_best, test_best = plot_tools.AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'])
-
-#The first argument should be a data frame, the second a column in it, in the form 'preds'
-plot_tools.preds_prob(bst_test,'xgb_preds', 'issignal','test')
-
-#To save some memory on colab we delete some unused variables
-del dtrain, dtest1, x_train, x_test, y_train, y_test, df_scaled
-gc.collect()
 
 
-x_whole_1 = df_urqmd[cuts].copy()
-y_whole_1 = pd.DataFrame(df_urqmd['issignal'], dtype='int')
-dtest2 = xgb.DMatrix(x_whole_1, label = y_whole_1)
-df_urqmd['xgb_preds'] = bst.predict(dtest2, output_margin=False)
 
-del x_whole_1, y_whole_1, dtest2
-gc.collect()
+# #ROC cures for the predictions on train and test sets
+# train_best, test_best = plot_tools.AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'])
+#
+# #The first argument should be a data frame, the second a column in it, in the form 'preds'
+# plot_tools.preds_prob(bst_test,'xgb_preds', 'issignal','test')
+#
+# #To save some memory on colab we delete some unused variables
+# del dtrain, dtest1, x_train, x_test, y_train, y_test, df_scaled
+# gc.collect()
 
-x_whole = df_dcm[cuts].copy()
-y_whole = pd.DataFrame(df_dcm['issignal'], dtype='int')
-#DMatrix is a internal data structure that used by XGBoost which is optimized for both memory efficiency and training speed.
-dtest = xgb.DMatrix(x_whole, label = y_whole)
-del x_whole, y_whole
-df_dcm['xgb_preds'] = bst.predict(dtest, output_margin=False)
-del dtest
-gc.collect()
 
+
+
+def whole_dataset(df_urqmd):
+    x_whole_1 = df_urqmd[cuts].copy()
+    y_whole_1 = pd.DataFrame(df_urqmd['issignal'], dtype='int')
+    dtest2 = xgb.DMatrix(x_whole_1, label = y_whole_1)
+    df_urqmd['xgb_preds'] = bst.predict(dtest2, output_margin=False)
+
+    del x_whole_1, y_whole_1, dtest2
+    gc.collect()
+
+    x_whole = df_dcm[cuts].copy()
+    y_whole = pd.DataFrame(df_dcm['issignal'], dtype='int')
+    #DMatrix is a internal data structure that used by XGBoost which is optimized for both memory efficiency and training speed.
+    dtest = xgb.DMatrix(x_whole, label = y_whole)
+    del x_whole, y_whole
+    df_dcm['xgb_preds'] = bst.predict(dtest, output_margin=False)
+    del dtest
+    gc.collect()
+
+    return df_dcm
+
+whole_dataset(df_urqmd)
 
 #lets take the best threshold and look at the confusion matrix
 cut1 = test_best
