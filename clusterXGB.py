@@ -24,7 +24,6 @@ import gc
 # Put here your path and your tree
 signal_path = '/home/olha/CBM/dataset10k_tree/dcm_1m_prim_signal.root'
 df_urqmd_path = '/home/olha/CBM/dataset10k_tree/urqmd_100k_cleaned.root'
-
 df_dcm_path = '/home/olha/CBM/dataset10k_tree/dcm_prim_100k_cleaned.root'
 
 tree_name = 'PlainTree'
@@ -80,8 +79,10 @@ def data_selection(signal_path, bgr_path, tree, threads):
     return df_scaled
 
 
-df_scaled = data_selection(signal_path, df_urqmd_path, tree_name, 4)
-df_urqmd = tree_importer(df_dcm_path, tree_name, number_of_threads)
+df_scaled = data_selection(signal_path, df_dcm_path, tree_name,
+ number_of_threads)
+df_dcm = tree_importer(df_dcm, tree_name, number_of_threads)
+df_urqmd = tree_importer(df_urqmd_path, tree_name, number_of_threads)
 cuts = [ 'chi2primneg', 'chi2primpos']
 
 
@@ -94,10 +95,10 @@ def train_test_set(df_scaled, cuts):
 
     Parameters
     ----------
-    df_scaled: dataframe_
+    df_scaled: dataframe
           dataframe with mixed signal and bacjground
     cuts: list(contains strings)
-          cuts
+          features on which training is based
     """
     x = df_scaled[cuts].copy()
 
@@ -145,7 +146,8 @@ def get_best_params():
                                                  'learning_rate':(0,1),
                                                  'n_estimators':(100,500)
                                                 })
-    #performing Bayesian optimization for 5 iterations with 8 steps of random exploration with an #acquisition function of expected improvement
+    #performing Bayesian optimization for 5 iterations with 8 steps of random exploration
+    # with an #acquisition function of expected improvement
     xgb_bo.maximize(n_iter=1, init_points=1)
 
     max_param = xgb_bo.max['params']
@@ -161,44 +163,59 @@ def get_best_params():
     return bst
 
 
-# bst = get_best_params()
-#
-# #predicitions on training set
-# bst_train= pd.DataFrame(data=bst.predict(dtrain, output_margin=False),  columns=["xgb_preds"])
-# y_train=y_train.set_index(np.arange(0,bst_train.shape[0]))
-# bst_train['issignal']=y_train['issignal']
-#
-#
-# #predictions on test set
-# bst_test = pd.DataFrame(data=bst.predict(dtest1, output_margin=False),  columns=["xgb_preds"])
-# y_test=y_test.set_index(np.arange(0,bst_test.shape[0]))
-# bst_test['issignal']=y_test['issignal']
-#
-#
-# #The following graph will show us that which features are important for the model
-# ax = xgb.plot_importance(bst)
-# plt.rcParams['figure.figsize'] = [5, 3]
-# plt.show()
-# ax.figure.tight_layout()
-#ax.figure.savefig("hits.png")
+bst = get_best_params()
+
+#predicitions on training set
+bst_train= pd.DataFrame(data=bst.predict(dtrain, output_margin=False),  columns=["xgb_preds"])
+y_train=y_train.set_index(np.arange(0,bst_train.shape[0]))
+bst_train['issignal']=y_train['issignal']
+
+
+#predictions on test set
+bst_test = pd.DataFrame(data=bst.predict(dtest1, output_margin=False),  columns=["xgb_preds"])
+y_test=y_test.set_index(np.arange(0,bst_test.shape[0]))
+bst_test['issignal']=y_test['issignal']
+
+
+#The following graph will show us that which features are important for the model
+ax = xgb.plot_importance(bst)
+plt.rcParams['figure.figsize'] = [5, 3]
+plt.show()
+ax.figure.tight_layout()
+# ax.figure.savefig("hits.png")
 
 
 
 
-# #ROC cures for the predictions on train and test sets
-# train_best, test_best = plot_tools.AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'])
-#
-# #The first argument should be a data frame, the second a column in it, in the form 'preds'
-# plot_tools.preds_prob(bst_test,'xgb_preds', 'issignal','test')
-#
-# #To save some memory on colab we delete some unused variables
-# del dtrain, dtest1, x_train, x_test, y_train, y_test, df_scaled
-# gc.collect()
+#ROC cures for the predictions on train and test sets
+train_best, test_best = plot_tools.AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'])
+
+#The first argument should be a data frame, the second a column in it, in the form 'preds'
+plot_tools.preds_prob(bst_test,'xgb_preds', 'issignal','test')
+
+#To save some memory on colab we delete some unused variables
+del dtrain, dtest1, x_train, x_test, y_train, y_test, df_scaled
+gc.collect()
 
 
 
 
-def whole_dataset(df_urqmd):
+def whole_dataset(df_urqmd,df_dcm, cuts):
+    """
+    Makes predictions and adds it to dataset. df_dcm is dataset which wasn't used
+    by model, so let's have a look what predictions we have for real data
+
+    Parameters
+    ----------
+    df_urqmd: dataframe
+          100k events data set
+    df_dcm: dataframe
+          100k events data set(unknown data)
+    cuts: list(contains strings)
+          features on which training is based
+
+    """
+
     x_whole_1 = df_urqmd[cuts].copy()
     y_whole_1 = pd.DataFrame(df_urqmd['issignal'], dtype='int')
     dtest2 = xgb.DMatrix(x_whole_1, label = y_whole_1)
@@ -216,51 +233,43 @@ def whole_dataset(df_urqmd):
     del dtest
     gc.collect()
 
-    return df_dcm
-
-whole_dataset(df_urqmd)
-
-#lets take the best threshold and look at the confusion matrix
-cut1 = test_best
-df_dcm['xgb_preds1'] = ((df_dcm['xgb_preds']>cut1)*1)
-cnf_matrix = confusion_matrix(df_dcm['issignal'], df_dcm['xgb_preds1'], labels=[1,0])
-np.set_printoptions(precision=2)
-fig, axs = plt.subplots(figsize=(10, 8))
-axs.yaxis.set_label_coords(-0.04,.5)
-axs.xaxis.set_label_coords(0.5,-.005)
-plot_tools.plot_confusion_matrix(cnf_matrix, classes=['signal','background'], title='Confusion Matrix for XGB for cut > '+str(cut1))
-#plt.savefig('confusion_matrix_extreme_gradient_boosting_whole_data.png')
+    return df_urqmd,df_dcm
 
 
-plot_tools.cut_visualization(df_urqmd,'xgb_preds',test_best)
 
-xgb.to_graphviz(bst, fmap='', num_trees=0, rankdir=None, yes_color=None, no_color=None, condition_node_params=None, leaf_node_params=None)
+whole_dataset(df_urqmd,df_dcm, cuts)
 
-new_check_set= df_urqmd.copy()
-new_check_set['new_signal']=0
-mask1 = (new_check_set['chi2primpos'] > 18.4) & (new_check_set['chi2primneg'] > 18.4)
 
-mask2 = (new_check_set['ldl'] > 5) & (new_check_set['distance'] < 1)
 
-mask3 = (new_check_set['chi2geo'] < 3)
 
-new_check_set = new_check_set[(mask1) & (mask2) & (mask3)]
+def CM_plot(test_best, df_dcm):
+    """
+    Plots confusion matrix. A Confusion Matrix C is such that Cij is equal to
+    the number of observations known to be in group i and predicted to be in
+    group j. Thus in binary classification, the count of true positives is C00,
+    false negatives C01,false positives is C10, and true neagtives is C11.
 
-#After all these cuts, what is left is considered as signal, so we replace all the values in the 'new_signal'
-# column by 1
-new_check_set['new_signal'] = 1
-cnf_matrix = confusion_matrix(new_check_set['issignal'], new_check_set['new_signal'], labels=[1,0])
-np.set_printoptions(precision=2)
-fig, axs = plt.subplots(figsize=(10, 8))
-axs.yaxis.set_label_coords(-0.04,.5)
-axs.xaxis.set_label_coords(0.5,-.005)
-plot_tools.plot_confusion_matrix(cnf_matrix, classes=['signal','background'], title='Confusion Matrix for KFPF')
+    Confusion matrix is applied to previously unseen by model data, so we can
+    estimate model's performance
 
-cut3 = test_best
-mask1 = df_original['xgb_preds']>cut3
-df3=df_original[mask1]
+    Parameters
+    ----------
+    test_best:
 
-plot_tools.comaprison_XGB_KFPF(df3['mass'],new_check_set['mass'])
+    df_dcm: dataframe
+          100k events data set(unknown data)
+    """
+    #lets take the best threshold and look at the confusion matrix
+    cut1 = test_best
+    df_dcm['xgb_preds1'] = ((df_dcm['xgb_preds']>cut1)*1)
+    cnf_matrix = confusion_matrix(df_dcm['issignal'], df_dcm['xgb_preds1'], labels=[1,0])
+    np.set_printoptions(precision=2)
+    fig, axs = plt.subplots(figsize=(10, 8))
+    axs.yaxis.set_label_coords(-0.04,.5)
+    axs.xaxis.set_label_coords(0.5,-.005)
+    plot_tools.plot_confusion_matrix(cnf_matrix, classes=['signal','background'],
+     title='Confusion Matrix for XGB for cut > '+str(cut1))
+    #plt.savefig('confusion_matrix_extreme_gradient_boosting_whole_data.png')
 
-del x,y,x_test,y_test,x_whole,y_whole,dtest,dtrain,dtest1,df3,df_clean,df_scaled
-gc.collect()
+
+CM_plot(test_best, df_dcm)
