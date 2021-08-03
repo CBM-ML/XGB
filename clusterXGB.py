@@ -81,7 +81,7 @@ def data_selection(signal_path, bgr_path, tree, threads):
 
 df_scaled = data_selection(signal_path, df_dcm_path, tree_name,
  number_of_threads)
-df_dcm = tree_importer(df_dcm, tree_name, number_of_threads)
+df_dcm = tree_importer(df_dcm_path, tree_name, number_of_threads)
 df_urqmd = tree_importer(df_urqmd_path, tree_name, number_of_threads)
 cuts = [ 'chi2primneg', 'chi2primpos']
 
