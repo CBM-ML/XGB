@@ -4,6 +4,7 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 
 from library.CBM_ML.tree_importer import tree_importer
+from library.CBM_ML.plot_tools import AMS, preds_prob,plot_confusion_matrix
 
 from sklearn.model_selection import train_test_split
 
@@ -24,7 +25,6 @@ import gc
 # Put here your path and your tree
 signal_path = '/home/olha/CBM/dataset10k_tree/dcm_1m_prim_signal.root'
 df_urqmd_path = '/home/olha/CBM/dataset10k_tree/urqmd_100k_cleaned.root'
-df_dcm_path = '/home/olha/CBM/dataset10k_tree/dcm_prim_100k_cleaned.root'
 
 tree_name = 'PlainTree'
 
@@ -79,11 +79,11 @@ def data_selection(signal_path, bgr_path, tree, threads):
     return df_scaled
 
 
-df_scaled = data_selection(signal_path, df_dcm_path, tree_name,
+df_scaled = data_selection(signal_path, df_urqmd_path, tree_name,
  number_of_threads)
-df_dcm = tree_importer(df_dcm_path, tree_name, number_of_threads)
-df_urqmd = tree_importer(df_urqmd_path, tree_name, number_of_threads)
+
 cuts = [ 'chi2primneg', 'chi2primpos']
+
 
 
 def train_test_set(df_scaled, cuts):
@@ -111,10 +111,13 @@ def train_test_set(df_scaled, cuts):
     dtrain = xgb.DMatrix(x_train, label = y_train)
     dtest1=xgb.DMatrix(x_test, label = y_test)
 
-    return dtrain, dtest1
+    return dtrain, dtest1,x_train, y_train, y_test
 
 
-dtrain, dtest = train_test_set(df_scaled, cuts)
+dtrain, dtest1,x_train, y_train, y_test = train_test_set(df_scaled, cuts)
+
+del df_scaled
+gc.collect()
 
 #Bayesian Optimization function for xgboost
 #specify the parameters you want to tune as keyword arguments
@@ -179,70 +182,26 @@ bst_test['issignal']=y_test['issignal']
 
 #The following graph will show us that which features are important for the model
 ax = xgb.plot_importance(bst)
-plt.rcParams['figure.figsize'] = [5, 3]
+plt.rcParams['figure.figsize'] = [6, 3]
 plt.show()
 ax.figure.tight_layout()
-# ax.figure.savefig("hits.png")
+ax.figure.savefig("hits.png")
 
-
-
-
+#
+#
+#
 #ROC cures for the predictions on train and test sets
-train_best, test_best = plot_tools.AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'])
+train_best, test_best = AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'])
 
 #The first argument should be a data frame, the second a column in it, in the form 'preds'
-plot_tools.preds_prob(bst_test,'xgb_preds', 'issignal','test')
-
-#To save some memory on colab we delete some unused variables
-del dtrain, dtest1, x_train, x_test, y_train, y_test, df_scaled
-gc.collect()
+preds_prob(bst_test,'xgb_preds', 'issignal','test')
 
 
 
 
-def whole_dataset(df_urqmd,df_dcm, cuts):
-    """
-    Makes predictions and adds it to dataset. df_dcm is dataset which wasn't used
-    by model, so let's have a look what predictions we have for real data
-
-    Parameters
-    ----------
-    df_urqmd: dataframe
-          100k events data set
-    df_dcm: dataframe
-          100k events data set(unknown data)
-    cuts: list(contains strings)
-          features on which training is based
-
-    """
-
-    x_whole_1 = df_urqmd[cuts].copy()
-    y_whole_1 = pd.DataFrame(df_urqmd['issignal'], dtype='int')
-    dtest2 = xgb.DMatrix(x_whole_1, label = y_whole_1)
-    df_urqmd['xgb_preds'] = bst.predict(dtest2, output_margin=False)
-
-    del x_whole_1, y_whole_1, dtest2
-    gc.collect()
-
-    x_whole = df_dcm[cuts].copy()
-    y_whole = pd.DataFrame(df_dcm['issignal'], dtype='int')
-    #DMatrix is a internal data structure that used by XGBoost which is optimized for both memory efficiency and training speed.
-    dtest = xgb.DMatrix(x_whole, label = y_whole)
-    del x_whole, y_whole
-    df_dcm['xgb_preds'] = bst.predict(dtest, output_margin=False)
-    del dtest
-    gc.collect()
-
-    return df_urqmd,df_dcm
 
 
-
-whole_dataset(df_urqmd,df_dcm, cuts)
-
-
-
-
-def CM_plot(test_best, df_dcm):
+def CM_plot(test_best, x_train):
     """
     Plots confusion matrix. A Confusion Matrix C is such that Cij is equal to
     the number of observations known to be in group i and predicted to be in
@@ -256,20 +215,19 @@ def CM_plot(test_best, df_dcm):
     ----------
     test_best:
 
-    df_dcm: dataframe
-          100k events data set(unknown data)
+    x_train:
     """
     #lets take the best threshold and look at the confusion matrix
     cut1 = test_best
-    df_dcm['xgb_preds1'] = ((df_dcm['xgb_preds']>cut1)*1)
-    cnf_matrix = confusion_matrix(df_dcm['issignal'], df_dcm['xgb_preds1'], labels=[1,0])
+    x_train['xgb_preds1'] = ((x_train['xgb_preds']>cut1)*1)
+    cnf_matrix = confusion_matrix(x_train['issignal'], x_train['xgb_preds1'], labels=[1,0])
     np.set_printoptions(precision=2)
     fig, axs = plt.subplots(figsize=(10, 8))
     axs.yaxis.set_label_coords(-0.04,.5)
     axs.xaxis.set_label_coords(0.5,-.005)
-    plot_tools.plot_confusion_matrix(cnf_matrix, classes=['signal','background'],
+    plot_confusion_matrix(cnf_matrix, classes=['signal','background'],
      title='Confusion Matrix for XGB for cut > '+str(cut1))
-    #plt.savefig('confusion_matrix_extreme_gradient_boosting_whole_data.png')
+    plt.savefig('confusion_matrix_extreme_gradient_boosting_whole_data.png')
 
 
-CM_plot(test_best, df_dcm)
+CM_plot(test_best, bst_train)
