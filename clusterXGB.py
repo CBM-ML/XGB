@@ -22,7 +22,7 @@ from bayes_opt import BayesianOptimization
 
 import gc
 
-# Put here your path and your tree
+# Put here your signal and background path and your tree as well
 signal_path = '/home/olha/CBM/dataset10k_tree/dcm_1m_prim_signal.root'
 df_urqmd_path = '/home/olha/CBM/dataset10k_tree/urqmd_100k_cleaned.root'
 
@@ -82,6 +82,7 @@ def data_selection(signal_path, bgr_path, tree, threads):
 df_scaled = data_selection(signal_path, df_urqmd_path, tree_name,
  number_of_threads)
 
+# features to be trained
 cuts = [ 'chi2primneg', 'chi2primpos']
 
 
@@ -96,7 +97,7 @@ def train_test_set(df_scaled, cuts):
     Parameters
     ----------
     df_scaled: dataframe
-          dataframe with mixed signal and bacjground
+          dataframe with mixed signal and background
     cuts: list(contains strings)
           features on which training is based
     """
@@ -187,17 +188,12 @@ plt.show()
 ax.figure.tight_layout()
 ax.figure.savefig("hits.png")
 
-#
-#
-#
+
 #ROC cures for the predictions on train and test sets
 train_best, test_best = AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'])
 
 #The first argument should be a data frame, the second a column in it, in the form 'preds'
 preds_prob(bst_test,'xgb_preds', 'issignal','test')
-
-
-
 
 
 
@@ -213,9 +209,11 @@ def CM_plot(test_best, x_train):
 
     Parameters
     ----------
-    test_best:
+    test_best: numpy.float32
+              best threshold
 
-    x_train:
+    x_train: dataframe
+            we want to get confusion matrix on training datasets
     """
     #lets take the best threshold and look at the confusion matrix
     cut1 = test_best
