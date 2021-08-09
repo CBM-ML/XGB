@@ -3,7 +3,7 @@ import pandas as pd
 import xgboost as xgb
 import matplotlib.pyplot as plt
 
-from library.CBM_ML.tree_importer import tree_importer
+from library.CBM_ML.tree_importer import tree_importer, new_labels, quality_cuts
 from library.CBM_ML.plot_tools import AMS, preds_prob,plot_confusion_matrix
 
 from sklearn.model_selection import train_test_split
@@ -22,16 +22,27 @@ from bayes_opt import BayesianOptimization
 
 import gc
 
-# Put here your signal and background path and your tree as well
-signal_path = '/home/olha/CBM/dataset10k_tree/dcm_1m_prim_signal.root'
-df_urqmd_path = '/home/olha/CBM/dataset10k_tree/urqmd_100k_cleaned.root'
+import sys
+import os
+
 
 tree_name = 'PlainTree'
 
+path_list = []
 
 # How many threads we use to parallel code
 number_of_threads = 3
 
+for x in sys.argv[1:]:
+    path_list.append(x)
+
+signal_path = path_list[0]
+df_urqmd_path = path_list[1]
+
+output_path = path_list[2]
+
+if not os.path.exists(output_path):
+    os.mkdir(output_path)
 
 def data_selection(signal_path, bgr_path, tree, threads):
 
@@ -66,12 +77,19 @@ def data_selection(signal_path, bgr_path, tree, threads):
     signal= tree_importer(signal_path,tree_name, threads)
     df_urqmd = tree_importer(bgr_path, tree_name, threads)
 
+    signal = new_labels(signal)
+    df_urqmd = new_labels(df_urqmd)
+
+    signal = quality_cuts(signal)
+    df_urqmd = quality_cuts(df_urqmd)
+
+    signal_selected = signal[signal['issignal']==1]
     background_selected = df_urqmd[(df_urqmd['issignal'] == 0) &\
                                  ((df_urqmd['mass'] > 1.07) &\
                                  (df_urqmd['mass'] < 1.108) | (df_urqmd['mass']>1.1227) &\
                                  (df_urqmd['mass'] < 1.3))]
 
-    df_scaled = pd.concat([signal, background_selected])
+    df_scaled = pd.concat([signal_selected, background_selected])
     df_scaled = df_scaled.sample(frac=1)
     df_scaled.iloc[0:10,:]
     del signal, background_selected
@@ -81,6 +99,7 @@ def data_selection(signal_path, bgr_path, tree, threads):
 
 df_scaled = data_selection(signal_path, df_urqmd_path, tree_name,
  number_of_threads)
+
 
 # features to be trained
 cuts = [ 'chi2primneg', 'chi2primpos']
@@ -186,18 +205,18 @@ ax = xgb.plot_importance(bst)
 plt.rcParams['figure.figsize'] = [6, 3]
 plt.show()
 ax.figure.tight_layout()
-ax.figure.savefig("hits.png")
+ax.figure.savefig(str(output_path)+"/hits.png")
 
 
 #ROC cures for the predictions on train and test sets
-train_best, test_best = AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'])
+train_best, test_best = AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'], output_path)
 
 #The first argument should be a data frame, the second a column in it, in the form 'preds'
-preds_prob(bst_test,'xgb_preds', 'issignal','test')
+preds_prob(bst_test,'xgb_preds', 'issignal','test', output_path)
 
 
 
-def CM_plot(test_best, x_train):
+def CM_plot(test_best, x_train, output_path):
     """
     Plots confusion matrix. A Confusion Matrix C is such that Cij is equal to
     the number of observations known to be in group i and predicted to be in
@@ -225,7 +244,7 @@ def CM_plot(test_best, x_train):
     axs.xaxis.set_label_coords(0.5,-.005)
     plot_confusion_matrix(cnf_matrix, classes=['signal','background'],
      title='Confusion Matrix for XGB for cut > '+str(cut1))
-    plt.savefig('confusion_matrix_extreme_gradient_boosting_whole_data.png')
+    plt.savefig(str(output_path)+'/confusion_matrix_extreme_gradient_boosting_whole_data.png')
 
 
-CM_plot(test_best, bst_train)
+CM_plot(test_best, bst_train, output_path)
