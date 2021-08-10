@@ -25,6 +25,9 @@ import gc
 import sys
 import os
 
+from distributions.var_distr import hist_variables
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 tree_name = 'PlainTree'
 
@@ -131,13 +134,20 @@ def train_test_set(df_scaled, cuts):
     dtrain = xgb.DMatrix(x_train, label = y_train)
     dtest1=xgb.DMatrix(x_test, label = y_test)
 
-    return dtrain, dtest1,x_train, y_train, y_test
+    return dtrain, dtest1,x_train, x_test, y_train, y_test
 
 
-dtrain, dtest1,x_train, y_train, y_test = train_test_set(df_scaled, cuts)
+dtrain, dtest1,x_train,x_test, y_train, y_test = train_test_set(df_scaled, cuts)
 
 del df_scaled
 gc.collect()
+
+print("x_train: ", x_train)
+print("y_train: ", y_train)
+
+xy_train = pd.concat([x_train, y_train], axis = 1)
+
+
 
 #Bayesian Optimization function for xgboost
 #specify the parameters you want to tune as keyword arguments
@@ -215,8 +225,7 @@ train_best, test_best = AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xg
 preds_prob(bst_test,'xgb_preds', 'issignal','test', output_path)
 
 
-
-def CM_plot(test_best, x_train, output_path):
+def CM_plot(best, x, output_path):
     """
     Plots confusion matrix. A Confusion Matrix C is such that Cij is equal to
     the number of observations known to be in group i and predicted to be in
@@ -235,9 +244,9 @@ def CM_plot(test_best, x_train, output_path):
             we want to get confusion matrix on training datasets
     """
     #lets take the best threshold and look at the confusion matrix
-    cut1 = test_best
-    x_train['xgb_preds1'] = ((x_train['xgb_preds']>cut1)*1)
-    cnf_matrix = confusion_matrix(x_train['issignal'], x_train['xgb_preds1'], labels=[1,0])
+    cut1 = best
+    x['xgb_preds1'] = ((x['xgb_preds']>cut1)*1)
+    cnf_matrix = confusion_matrix(x['issignal'], x['xgb_preds1'], labels=[1,0])
     np.set_printoptions(precision=2)
     fig, axs = plt.subplots(figsize=(10, 8))
     axs.yaxis.set_label_coords(-0.04,.5)
@@ -247,4 +256,62 @@ def CM_plot(test_best, x_train, output_path):
     plt.savefig(str(output_path)+'/confusion_matrix_extreme_gradient_boosting_whole_data.png')
 
 
-CM_plot(test_best, bst_train, output_path)
+CM_plot(train_best, bst_train, output_path)
+
+x_train['issignalXGB'] = bst_train['xgb_preds'].values
+x_train['xgb_preds1'] = ((x_train['issignalXGB']>train_best)*1)
+
+x_train['issignal'] = y_train.values
+
+dfs_orig = x_train[x_train['issignal']==1]
+dfb_orig = x_train[x_train['issignal']==0]
+
+dfs_cut = x_train[x_train['xgb_preds1']==1]
+dfb_cut = x_train[x_train['xgb_preds1']==0]
+
+
+print('Train signals: ', len(xy_train[xy_train['issignal']==1]))
+print('Train background: ', len(xy_train[xy_train['issignal']==0]))
+
+print("True signal length: ", len(dfs_orig))
+print("True background length: ", len(dfb_orig))
+
+
+print("Predicted signal length: ", len(dfs_cut))
+print("Predicted background length: ", len(dfb_cut))
+
+
+
+non_log_x = ['cosineneg', 'cosinepos', 'cosinetopo',  'mass', 'pT', 'rapidity',
+ 'phi', 'eta', 'x', 'y','z', 'px', 'py', 'pz', 'l', 'ldl']
+
+log_x = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance']
+
+new_log_x = []
+
+for cut in cuts:
+    if cut in log_x:
+        dfs_orig[cut+'_log'] = np.log(dfs_orig[cut])
+        dfb_orig[cut+'_log'] = np.log(dfb_orig[cut])
+
+        dfs_cut[cut+'_log'] = np.log(dfs_cut[cut])
+        dfb_cut[cut+'_log'] = np.log(dfb_cut[cut])
+
+        new_log_x.append(cut+'_log')
+
+
+        dfs_orig = dfs_orig.drop([cut], axis=1)
+        dfb_orig = dfb_orig.drop([cut], axis=1)
+
+        dfs_cut = dfs_cut.drop([cut], axis=1)
+        dfb_cut = dfb_cut.drop([cut], axis=1)
+
+    if cut in non_log_x:
+        new_log_x.append(cut)
+
+
+pdf_cuts = PdfPages(output_path+'/'+'dist_cuts.pdf')
+for feat in new_log_x:
+    hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, feat, pdf_cuts)
+
+pdf_cuts.close()
