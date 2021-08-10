@@ -13,7 +13,7 @@ The function roc_auc_score computes Area Under the Receiver Operating Characteri
 To find the best threshold which results more signal to background ratio for lambda candidates we use the parameter S0 called the approximate median significance
 by the higgs boson  ML challenge (http://higgsml.lal.in2p3.fr/documentation,9.)
 """
-def AMS(y_true, y_predict, y_true1, y_predict1):
+def AMS(y_true, y_predict, y_true1, y_predict1, output_path):
     roc_auc=roc_auc_score(y_true, y_predict)
     fpr, tpr, thresholds = roc_curve(y_true, y_predict,drop_intermediate=False ,pos_label=1)
     S0 = sqrt(2 * ((tpr + fpr) * log((1 + tpr/fpr)) - tpr))
@@ -43,7 +43,7 @@ def AMS(y_true, y_predict, y_true1, y_predict1):
     plt.ylim([0, 1.02])
     #axs.axis([-0.01, 1, 0.9, 1])
     fig.tight_layout()
-    fig.savefig('hists.png')
+    fig.savefig(str(output_path)+'/hists.png')
     plt.show()
     return S0_best_threshold, S0_best_threshold1
 
@@ -51,11 +51,11 @@ def AMS(y_true, y_predict, y_true1, y_predict1):
 
 """
 To visualize true MC signal in the probability distribution returned by XGB classifier for a train-test data-set, the preds_prob function can be used.
-Its input are a data-frame, predictions of the classifier (probabilities) and the target in the data-frame, and shows how the True signal is present 
+Its input are a data-frame, predictions of the classifier (probabilities) and the target in the data-frame, and shows how the True signal is present
 inside this probability.
 """
 
-def preds_prob(df, preds, true, dataset):
+def preds_prob(df, preds, true, dataset, output_path):
     if dataset =='train':
         label1 = 'XGB Predictions on the training data set'
     else:
@@ -70,15 +70,15 @@ def preds_prob(df, preds, true, dataset):
     err = np.sqrt(hist)
     center = (bins[:-1] + bins[1:]) / 2
 
-    
+
     hist1, bins1 = np.histogram(TN[preds], bins=bins1)
     err1 = np.sqrt(hist1)
     plt.errorbar(center, hist1, yerr=err1, fmt='o',
                  c='Red', label='Background in predictions')
-    
+
     plt.errorbar(center, hist, yerr=err, fmt='o',
                  c='blue', label='Signal in predictions')
-    
+
     ax.set_yscale('log')
     plt.xlabel('Probability',fontsize=18)
     plt.ylabel('Counts', fontsize=18)
@@ -88,18 +88,18 @@ def preds_prob(df, preds, true, dataset):
     ax.tick_params(axis='both', which='minor', labelsize=16)
     plt.show()
     fig.tight_layout()
-    fig.savefig('test_best.png')
+    fig.savefig(str(output_path)+'/test_best.png')
 
-    
+
 """
 A **Confusion Matrix** $C$ is such that $C_{ij}$ is equal to the number of observations known to be in group $i$ and predicted to be in group $j$.
  Thus in binary classification, the count of true positives is $C_{00}$, false negatives $C_{01}$,false positives is $C_{10}$, and true neagtives is $C_{11}$.
 
 If $ y^{'}_{i} $ is the predicted value of the $ i$-th sample and $y_{i}$ is the corresponding true value, then the fraction of correct predictions over
-$ n_{samples}$ is defined as 
+$ n_{samples}$ is defined as
 $$
 True \: positives (y,y^{'}) =  \sum_{i=1}^{n_{samples} } 1 (y^{'}_{i} = y_{i}=1)
-$$ 
+$$
 
 The following function prints and plots the confusion matrix. Normalization can be applied by setting `normalize=True`.
 """
@@ -159,7 +159,7 @@ def comaprison_XGB_KFPF(XGB_mass,KFPF_mass):
     hist1, bin_edges1 = np.histogram(XGB_mass,range=(1.09, 1.17), bins=300)
     hist2, bin_edges2 = np.histogram(KFPF_mass,range=(1.09, 1.17), bins=300)
 
-    #makes sense to have only positive values 
+    #makes sense to have only positive values
     diff = (hist1 - hist2)
     axs[1].bar(bins[:-1],     # this is what makes it comparable
         ns / ns1, # maybe check for div-by-zero!
@@ -174,9 +174,9 @@ def comaprison_XGB_KFPF(XGB_mass,KFPF_mass):
 
 
 """
-Function that plots signal and background in the train-test data set 
+Function that plots signal and background in the train-test data set
 """
-def plt_sig_back(df):
+def plt_sig_back(df, output_path):
     range1 = (1.077, 1.18)
     fig, axs = plt.subplots(figsize=(10, 6))
     #df_scaled['mass'].plot.hist(bins = 300, range=range1,grid=True,sharey=True)
@@ -193,16 +193,16 @@ def plt_sig_back(df):
     axs.tick_params(axis='both', which='major', labelsize=18)
     plt.yscale("log")
     fig.tight_layout()
-    fig.savefig("hists.png")
-    
+    fig.savefig(str(output_path)+"/hists.png")
 
-    
+
+
 # The following function will display the inavriant mass histogram of the original 10k event set along with the mass histoigram after we apply a cut
 # on the probability prediction of xgb
-def cut_visualization(df, variable,cut, range1=(1.09, 1.19), bins1= 300 ):
+def cut_visualization(df, variable,cut, output_path, range1=(1.09, 1.19), bins1= 300):
     mask1 = df[variable]>cut
     df3=df[mask1]
-    
+
     fig, ax2 = plt.subplots(figsize=(12, 8), dpi = 300)
     color = 'tab:blue'
     ax2.hist(df['mass'],bins = bins1, range=range1, facecolor='blue' ,alpha = 0.35, label='before selection')
@@ -212,9 +212,9 @@ def cut_visualization(df, variable,cut, range1=(1.09, 1.19), bins1= 300 ):
     ax2.tick_params(axis='both', which='major', labelsize=15)
     ax2.grid()
     ax2.set_xlabel("Mass (GeV/${c^2}$)", fontsize = 18)
-    
-    
-    
+
+
+
     color = 'tab:red'
     ax1 = ax2.twinx()
     ax1.hist(df3['mass'], bins = bins1, range=range1, facecolor='red',alpha = 0.35, label="XGB (with a cut > %.2f"%cut+')')
@@ -228,4 +228,4 @@ def cut_visualization(df, variable,cut, range1=(1.09, 1.19), bins1= 300 ):
     #plt.text(0.02, 0.1, r'cut > %.4f'%cut, fontsize=15)
     plt.show()
     fig.tight_layout()
-    fig.savefig("test_best.png")
+    fig.savefig(str(output_path)+"/test_best.png")
