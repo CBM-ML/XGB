@@ -123,29 +123,29 @@ def train_test_set(df_scaled, cuts):
     cuts: list(contains strings)
           features on which training is based
     """
-    x = df_scaled[cuts].copy()
+    # x = df_scaled[cuts].copy()
+    x = df_scaled.copy()
 
     # The MC information is saved in this y variable
     y =pd.DataFrame(df_scaled['issignal'], dtype='int')
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=324)
+    x_train_all, x_test_all, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=324)
 
+
+    x_train = x_train_all[cuts].copy()
+    x_test = x_test_all[cuts].copy()
     #DMatrix is a internal data structure that used by XGBoost
     # which is optimized for both memory efficiency and training speed.
     dtrain = xgb.DMatrix(x_train, label = y_train)
     dtest1=xgb.DMatrix(x_test, label = y_test)
 
-    return dtrain, dtest1,x_train, x_test, y_train, y_test
+    return dtrain, dtest1,x_train_all,x_train, x_test, y_train, y_test
 
 
-dtrain, dtest1,x_train,x_test, y_train, y_test = train_test_set(df_scaled, cuts)
+dtrain, dtest1,x_train_all, x_train,x_test, y_train, y_test = train_test_set(df_scaled, cuts)
 
 del df_scaled
 gc.collect()
 
-print("x_train: ", x_train)
-print("y_train: ", y_train)
-
-xy_train = pd.concat([x_train, y_train], axis = 1)
 
 
 
@@ -258,27 +258,29 @@ def CM_plot(best, x, output_path):
 
 CM_plot(train_best, bst_train, output_path)
 
-x_train['issignalXGB'] = bst_train['xgb_preds'].values
-x_train['xgb_preds1'] = ((x_train['issignalXGB']>train_best)*1)
-
-x_train['issignal'] = y_train.values
-
-dfs_orig = x_train[x_train['issignal']==1]
-dfb_orig = x_train[x_train['issignal']==0]
-
-dfs_cut = x_train[x_train['xgb_preds1']==1]
-dfb_cut = x_train[x_train['xgb_preds1']==0]
-
-
-print('Train signals: ', len(xy_train[xy_train['issignal']==1]))
-print('Train background: ', len(xy_train[xy_train['issignal']==0]))
-
-print("True signal length: ", len(dfs_orig))
-print("True background length: ", len(dfb_orig))
+# x_train['issignalXGB'] = bst_train['xgb_preds'].values
+# x_train['xgb_preds1'] = ((x_train['issignalXGB']>train_best)*1)
+#
+# x_train['issignal'] = y_train.values
+#
+# dfs_orig = x_train[x_train['issignal']==1]
+# dfb_orig = x_train[x_train['issignal']==0]
+#
+# dfs_cut = x_train[x_train['xgb_preds1']==1]
+# dfb_cut = x_train[x_train['xgb_preds1']==0]
 
 
-print("Predicted signal length: ", len(dfs_cut))
-print("Predicted background length: ", len(dfb_cut))
+
+x_train_all['issignalXGB'] = bst_train['xgb_preds'].values
+x_train_all['xgb_preds1'] = ((x_train_all['issignalXGB']>train_best)*1)
+
+x_train_all['issignal'] = y_train.values
+
+dfs_orig = x_train_all[x_train_all['issignal']==1]
+dfb_orig = x_train_all[x_train_all['issignal']==0]
+
+dfs_cut = x_train_all[x_train_all['xgb_preds1']==1]
+dfb_cut = x_train_all[x_train_all['xgb_preds1']==0]
 
 
 
@@ -289,7 +291,11 @@ log_x = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance']
 
 new_log_x = []
 
-for cut in cuts:
+cuts1 = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'cosineneg',
+   'cosinepos', 'cosinetopo', 'distance', 'eta', 'l', 'ldl',
+   'mass', 'p', 'pT', 'phi', 'px', 'py', 'pz', 'rapidity', 'x', 'y', 'z']
+
+for cut in cuts1:
     if cut in log_x:
         dfs_orig[cut+'_log'] = np.log(dfs_orig[cut])
         dfb_orig[cut+'_log'] = np.log(dfb_orig[cut])
