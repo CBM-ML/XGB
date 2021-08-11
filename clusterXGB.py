@@ -138,10 +138,10 @@ def train_test_set(df_scaled, cuts):
     dtrain = xgb.DMatrix(x_train, label = y_train)
     dtest1=xgb.DMatrix(x_test, label = y_test)
 
-    return dtrain, dtest1,x_train_all,x_train, x_test, y_train, y_test
+    return dtrain, dtest1,x_train_all,x_test_all,x_train, x_test, y_train, y_test
 
 
-dtrain, dtest1,x_train_all, x_train,x_test, y_train, y_test = train_test_set(df_scaled, cuts)
+dtrain, dtest1,x_train_all, x_test_all, x_train,x_test, y_train, y_test = train_test_set(df_scaled, cuts)
 
 del df_scaled
 gc.collect()
@@ -256,24 +256,26 @@ def CM_plot(best, x, output_path):
     plt.savefig(str(output_path)+'/confusion_matrix_extreme_gradient_boosting_whole_data.png')
 
 
-CM_plot(train_best, bst_train, output_path)
+CM_plot(test_best, bst_test, output_path)
+
+print("x_train_all: ", len(x_train_all))
+print("x_test_all: ", len(x_test_all))
+
+x_test_all['issignalXGB'] = bst_test['xgb_preds'].values
+x_test_all['xgb_preds1'] = ((x_test_all['issignalXGB']>test_best)*1)
+
+x_test_all['issignal'] = y_test.values
+
+dfs_orig = x_test_all[x_test_all['issignal']==1]
+dfb_orig = x_test_all[x_test_all['issignal']==0]
 
 
-x_train_all['issignalXGB'] = bst_train['xgb_preds'].values
-x_train_all['xgb_preds1'] = ((x_train_all['issignalXGB']>train_best)*1)
-
-x_train_all['issignal'] = y_train.values
-
-dfs_orig = x_train_all[x_train_all['issignal']==1]
-dfb_orig = x_train_all[x_train_all['issignal']==0]
-
-
-dfs_cut = x_train_all[(x_train_all['xgb_preds1']==1) & (x_train_all['issignal']==1)]
-dfb_cut = x_train_all[(x_train_all['xgb_preds1']==1) & (x_train_all['issignal']==0)]
+dfs_cut = x_test_all[(x_test_all['xgb_preds1']==1) & (x_test_all['issignal']==1)]
+dfb_cut = x_test_all[(x_test_all['xgb_preds1']==1) & (x_test_all['issignal']==0)]
 
 difference_s = pd.concat([dfs_orig, dfs_cut]).drop_duplicates(keep=False)
 
-print("x_train_all: ", len(x_train_all))
+print("x_test_all: ", len(x_test_all))
 print("dfs_orig: ", len(dfs_orig))
 
 print("dfs_cut: ", len(dfs_cut))
