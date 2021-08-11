@@ -258,18 +258,6 @@ def CM_plot(best, x, output_path):
 
 CM_plot(train_best, bst_train, output_path)
 
-# x_train['issignalXGB'] = bst_train['xgb_preds'].values
-# x_train['xgb_preds1'] = ((x_train['issignalXGB']>train_best)*1)
-#
-# x_train['issignal'] = y_train.values
-#
-# dfs_orig = x_train[x_train['issignal']==1]
-# dfb_orig = x_train[x_train['issignal']==0]
-#
-# dfs_cut = x_train[x_train['xgb_preds1']==1]
-# dfb_cut = x_train[x_train['xgb_preds1']==0]
-
-
 
 x_train_all['issignalXGB'] = bst_train['xgb_preds'].values
 x_train_all['xgb_preds1'] = ((x_train_all['issignalXGB']>train_best)*1)
@@ -279,9 +267,11 @@ x_train_all['issignal'] = y_train.values
 dfs_orig = x_train_all[x_train_all['issignal']==1]
 dfb_orig = x_train_all[x_train_all['issignal']==0]
 
-dfs_cut = x_train_all[x_train_all['xgb_preds1']==1]
-dfb_cut = x_train_all[x_train_all['xgb_preds1']==0]
+# dfs_cut = x_train_all[x_train_all['xgb_preds1']==1]
+# dfb_cut = x_train_all[x_train_all['xgb_preds1']==0]
 
+dfs_cut = x_train_all[(x_train_all['xgb_preds1']==1) & (x_train_all['issignal']==1)]
+dfb_cut = x_train_all[(x_train_all['xgb_preds1']==1) & (x_train_all['issignal']==0)]
 
 
 non_log_x = ['cosineneg', 'cosinepos', 'cosinetopo',  'mass', 'pT', 'rapidity',
