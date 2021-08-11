@@ -50,7 +50,7 @@ def hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut,feature, pdf_key):
                , title_fontsize=20, fontsize =20, bbox_to_anchor=(1.05, 1),
                 loc='upper left', prop=fontP,)
 
-
+    ax[0].set_xlim(dfb_orig[feature].min(), dfb_orig[feature].max())
     ax[0].xaxis.set_tick_params(labelsize=25)
     ax[0].yaxis.set_tick_params(labelsize=25)
 
@@ -76,6 +76,7 @@ def hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut,feature, pdf_key):
                 loc='upper left', prop=fontP,)
 
 
+    ax[1].set_xlim(dfb_orig[feature].min(), dfb_orig[feature].max())
     ax[1].xaxis.set_tick_params(labelsize=25)
     ax[1].yaxis.set_tick_params(labelsize=25)
 
