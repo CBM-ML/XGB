@@ -105,8 +105,7 @@ df_scaled = data_selection(signal_path, df_urqmd_path, tree_name,
 
 
 # features to be trained
-cuts = [ 'chi2primneg', 'chi2primpos']
-
+cuts = [ 'chi2primneg', 'chi2primpos','chi2geo','distance', 'ldl']
 
 
 def train_test_set(df_scaled, cuts):

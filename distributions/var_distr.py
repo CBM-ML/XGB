@@ -66,7 +66,7 @@ def hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s,feature, p
 
     ax[1].hist(dfs_cut[feature], label = 'signal', bins = 500, alpha = 0.4, color = 'blue')
     ax[1].hist(dfb_cut[feature], label = 'background', bins = 500, alpha = 0.4, color = 'red')
-    ax[1].legend(shadow=True,title = 'S/B='+ str(round(len(dfs_cut)/len(dfb_cut), 3)) + 'quality cuts+'
+    ax[1].legend(shadow=True,title = 'S/B='+ str(round(len(dfs_cut)/len(dfb_cut), 3)) + '\nquality cuts+'
                '\n S samples:  '+str(dfs_cut.shape[0]) + '\n B samples: '+ str(dfb_cut.shape[0]) +
                '\n ML cut'
                , title_fontsize=15, fontsize =15, bbox_to_anchor=(1.05, 1),
@@ -74,7 +74,7 @@ def hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s,feature, p
 
 
     ax[1].set_xlim(dfb_orig[feature].min(), dfb_orig[feature].max())
-     
+
     ax[1].xaxis.set_tick_params(labelsize=15)
     ax[1].yaxis.set_tick_params(labelsize=15)
 
