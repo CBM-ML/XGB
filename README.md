@@ -8,4 +8,4 @@ https://colab.research.google.com/drive/1Up8YvcWiYv0NN7nOA5YhlpsiqTsY0eCt?usp=sh
 
 # Usage
 
-python /path/to_signal.root  /path/to_background.root  output_path
+python clusterXGB.py /path/to_signal.root  /path/to_background.root  output_path
