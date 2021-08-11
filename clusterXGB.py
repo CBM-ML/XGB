@@ -267,12 +267,17 @@ x_train_all['issignal'] = y_train.values
 dfs_orig = x_train_all[x_train_all['issignal']==1]
 dfb_orig = x_train_all[x_train_all['issignal']==0]
 
-# dfs_cut = x_train_all[x_train_all['xgb_preds1']==1]
-# dfb_cut = x_train_all[x_train_all['xgb_preds1']==0]
 
 dfs_cut = x_train_all[(x_train_all['xgb_preds1']==1) & (x_train_all['issignal']==1)]
 dfb_cut = x_train_all[(x_train_all['xgb_preds1']==1) & (x_train_all['issignal']==0)]
 
+difference_s = pd.concat([dfs_orig, dfs_cut]).drop_duplicates(keep=False)
+
+print("x_train_all: ", len(x_train_all))
+print("dfs_orig: ", len(dfs_orig))
+
+print("dfs_cut: ", len(dfs_cut))
+print("difference: ", len(difference_s))
 
 non_log_x = ['cosineneg', 'cosinepos', 'cosinetopo',  'mass', 'pT', 'rapidity',
  'phi', 'eta', 'x', 'y','z', 'px', 'py', 'pz', 'l', 'ldl']
@@ -293,6 +298,8 @@ for cut in cuts1:
         dfs_cut[cut+'_log'] = np.log(dfs_cut[cut])
         dfb_cut[cut+'_log'] = np.log(dfb_cut[cut])
 
+        difference_s[cut+'_log'] = np.log(difference_s[cut])
+
         new_log_x.append(cut+'_log')
 
 
@@ -301,6 +308,7 @@ for cut in cuts1:
 
         dfs_cut = dfs_cut.drop([cut], axis=1)
         dfb_cut = dfb_cut.drop([cut], axis=1)
+        difference_s = difference_s.drop([cut], axis=1)
 
     if cut in non_log_x:
         new_log_x.append(cut)
@@ -308,6 +316,6 @@ for cut in cuts1:
 
 pdf_cuts = PdfPages(output_path+'/'+'dist_cuts.pdf')
 for feat in new_log_x:
-    hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, feat, pdf_cuts)
+    hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s, feat, pdf_cuts)
 
 pdf_cuts.close()
