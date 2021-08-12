@@ -108,6 +108,7 @@ df_scaled = data_selection(signal_path, df_urqmd_path, tree_name,
 cuts = [ 'chi2primneg', 'chi2primpos','chi2geo','distance', 'ldl']
 
 
+
 def train_test_set(df_scaled, cuts):
     """
     To make machine learning algorithms more efficient on unseen data we divide
@@ -287,9 +288,8 @@ log_x = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance']
 
 new_log_x = []
 
-cuts1 = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'cosineneg',
-   'cosinepos', 'cosinetopo', 'distance', 'eta', 'l', 'ldl',
-   'mass', 'p', 'pT', 'phi', 'px', 'py', 'pz', 'rapidity', 'x', 'y', 'z']
+cuts1 = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance',  'ldl',
+   'mass','pT']
 
 for cut in cuts1:
     if cut in log_x:

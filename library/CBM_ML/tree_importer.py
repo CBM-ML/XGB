@@ -23,10 +23,8 @@ def tree_importer(path,treename, n):
 
 
 def new_labels(df):
-    new_labels= ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'cosineneg',
-       'cosinepos', 'cosinetopo', 'distance', 'eta', 'l', 'ldl',
-       'mass', 'p', 'pT', 'phi', 'px', 'py', 'pz', 'rapidity', 'x', 'y', 'z',
-       'daughter1id', 'daughter2id', 'isfrompv', 'pid', 'issignal']
+    new_labels= ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance',  'ldl',
+       'mass','pT', 'issignal']
 
     df.columns = new_labels
     return df
@@ -52,13 +50,10 @@ def quality_cuts(df):
            (df['chi2topo'] > 0)
     mass_cut = (df['mass'] > 1.077)
 
-    coord_cut = (abs(df['x']) < 50) & (abs(df['y']) < 50)
-    dist_l_cut = (df['distance'] > 0) &  (df['distance'] < 100) &\
-                     (df['l'] > 0 )  & (df['ldl'] > 0 ) & (abs(df['l']) < 80)
+    # coord_cut = (abs(df['x']) < 50) & (abs(df['y']) < 50)
+    dist_l_cut = (df['distance'] > 0) &  (df['distance'] < 100) & (df['ldl'] > 0 )
 
-    pz_cut = (df['pz'] > 0)
 
-    cuts = (chi2_cut) & (mass_cut) & (coord_cut) & (dist_l_cut) &\
-    (pz_cut)
+    cuts = (chi2_cut) & (mass_cut)  & (dist_l_cut)
 
     return df[cuts]
