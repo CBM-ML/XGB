@@ -4,7 +4,7 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 
 from library.CBM_ML.tree_importer import tree_importer, new_labels, quality_cuts
-from library.CBM_ML.plot_tools import AMS, preds_prob,plot_confusion_matrix
+from library.CBM_ML.plot_tools import AMS, preds_prob,plot_confusion_matrix, cut_visualization
 
 from sklearn.model_selection import train_test_split
 
@@ -43,6 +43,7 @@ signal_path = path_list[0]
 df_urqmd_path = path_list[1]
 
 output_path = path_list[2]
+
 
 if not os.path.exists(output_path):
     os.mkdir(output_path)
@@ -83,14 +84,16 @@ def data_selection(signal_path, bgr_path, tree, threads):
     signal = new_labels(signal)
     df_urqmd = new_labels(df_urqmd)
 
-    signal = quality_cuts(signal)
-    df_urqmd = quality_cuts(df_urqmd)
+    signal_selected = signal
 
-    signal_selected = signal[signal['issignal']==1]
-    background_selected = df_urqmd[(df_urqmd['issignal'] == 0) &\
-                                 ((df_urqmd['mass'] > 1.07) &\
-                                 (df_urqmd['mass'] < 1.108) | (df_urqmd['mass']>1.1227) &\
-                                 (df_urqmd['mass'] < 1.3))]
+    background_selected = df_urqmd[(df_urqmd['issignal'] == 0)
+                & ((df_urqmd['mass'] > 1.07)
+                & (df_urqmd['mass'] < 1.108) | (df_urqmd['mass']>1.1227)
+                   & (df_urqmd['mass'] < 1.3))].sample(n=3*(signal.shape[0]))
+
+    print("Signal: ", len(signal_selected))
+    print("background: ", len(background_selected))
+
 
     df_scaled = pd.concat([signal_selected, background_selected])
     df_scaled = df_scaled.sample(frac=1)
@@ -100,13 +103,16 @@ def data_selection(signal_path, bgr_path, tree, threads):
     return df_scaled
 
 
+
 df_scaled = data_selection(signal_path, df_urqmd_path, tree_name,
  number_of_threads)
+
+print("Df scaled: ", len(df_scaled))
+
 
 
 # features to be trained
 cuts = [ 'chi2primneg', 'chi2primpos','chi2geo','distance', 'ldl']
-
 
 
 def train_test_set(df_scaled, cuts):
@@ -143,10 +149,30 @@ def train_test_set(df_scaled, cuts):
 
 dtrain, dtest1,x_train_all, x_test_all, x_train,x_test, y_train, y_test = train_test_set(df_scaled, cuts)
 
+
 del df_scaled
 gc.collect()
 
+# open deploy dataframe with x and y as well
+def open_deploy_data(deploy_path, tree, threads):
+    deploy_data= tree_importer(deploy_path,tree_name, threads)
+    deploy_data = new_labels(deploy_data)
 
+    return deploy_data
+
+
+def deploy_set(deploy_data, cuts):
+    x_deploy = deploy_data[cuts].copy()
+    y_deploy =pd.DataFrame(deploy_data['issignal'], dtype='int')
+
+    ddeploy=xgb.DMatrix(x_deploy, label = y_deploy)
+
+    return ddeploy, x_deploy, y_deploy
+
+
+deploy_data = open_deploy_data(df_urqmd_path, tree_name, number_of_threads)
+
+ddeploy, x_deploy, y_deploy = deploy_set(deploy_data, cuts)
 
 
 #Bayesian Optimization function for xgboost
@@ -210,6 +236,12 @@ y_test=y_test.set_index(np.arange(0,bst_test.shape[0]))
 bst_test['issignal']=y_test['issignal']
 
 
+bst_deploy = pd.DataFrame(data=bst.predict(ddeploy, output_margin=False),  columns=["xgb_preds"])
+y_deploy=y_deploy.set_index(np.arange(0,bst_deploy.shape[0]))
+bst_deploy['issignal']=y_deploy['issignal']
+
+
+
 #The following graph will show us that which features are important for the model
 ax = xgb.plot_importance(bst)
 plt.rcParams['figure.figsize'] = [6, 3]
@@ -221,9 +253,9 @@ ax.figure.savefig(str(output_path)+"/hits.png")
 #ROC cures for the predictions on train and test sets
 train_best, test_best = AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xgb_preds'], output_path)
 
+
 #The first argument should be a data frame, the second a column in it, in the form 'preds'
 preds_prob(bst_test,'xgb_preds', 'issignal','test', output_path)
-
 
 def CM_plot(best, x, output_path):
     """
@@ -258,25 +290,26 @@ def CM_plot(best, x, output_path):
 
 CM_plot(test_best, bst_test, output_path)
 
-print("x_train_all: ", len(x_train_all))
-print("x_test_all: ", len(x_test_all))
-
-x_test_all['issignalXGB'] = bst_test['xgb_preds'].values
-x_test_all['xgb_preds1'] = ((x_test_all['issignalXGB']>test_best)*1)
-
-x_test_all['issignal'] = y_test.values
-
-dfs_orig = x_test_all[x_test_all['issignal']==1]
-dfb_orig = x_test_all[x_test_all['issignal']==0]
 
 
-dfs_cut = x_test_all[(x_test_all['xgb_preds1']==1) & (x_test_all['issignal']==1)]
-dfb_cut = x_test_all[(x_test_all['xgb_preds1']==1) & (x_test_all['issignal']==0)]
+
+deploy_data['issignalXGB'] = bst_deploy['xgb_preds'].values
+deploy_data['xgb_preds1'] = ((deploy_data['issignalXGB']>test_best)*1)
+
+
+
+dfs_orig = deploy_data[deploy_data['issignal']==1]
+dfb_orig = deploy_data[deploy_data['issignal']==0]
+
+
+dfs_cut = deploy_data[(deploy_data['xgb_preds1']==1) & (deploy_data['issignal']==1)]
+dfb_cut = deploy_data[(deploy_data['xgb_preds1']==1) & (deploy_data['issignal']==0)]
 
 difference_s = pd.concat([dfs_orig, dfs_cut]).drop_duplicates(keep=False)
 
-print("x_test_all: ", len(x_test_all))
+print("x_deploy: ", len(deploy_data))
 print("dfs_orig: ", len(dfs_orig))
+print("dfb_orig: ", len(dfb_orig))
 
 print("dfs_cut: ", len(dfs_cut))
 print("difference: ", len(difference_s))
@@ -320,3 +353,5 @@ for feat in new_log_x:
     hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s, feat, pdf_cuts)
 
 pdf_cuts.close()
+
+cut_visualization(deploy_data,'issignalXGB',test_best, output_path)

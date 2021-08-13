@@ -206,25 +206,25 @@ def cut_visualization(df, variable,cut, output_path, range1=(1.09, 1.19), bins1=
     fig, ax2 = plt.subplots(figsize=(12, 8), dpi = 300)
     color = 'tab:blue'
     ax2.hist(df['mass'],bins = bins1, range=range1, facecolor='blue' ,alpha = 0.35, label='before selection')
-    ax2.set_ylabel('Counts', fontsize = 15, color=color)
+    ax2.set_ylabel('Counts', fontsize = 8, color=color)
     ax2.tick_params(axis='y', labelcolor=color)
-    ax2.legend( fontsize = 15, loc='upper left')
-    ax2.tick_params(axis='both', which='major', labelsize=15)
+    ax2.legend( fontsize = 8, loc='upper left')
+    ax2.tick_params(axis='both', which='major', labelsize=8)
     ax2.grid()
-    ax2.set_xlabel("Mass (GeV/${c^2}$)", fontsize = 18)
+    ax2.set_xlabel("Mass (GeV/${c^2}$)", fontsize = 8)
 
 
 
     color = 'tab:red'
     ax1 = ax2.twinx()
     ax1.hist(df3['mass'], bins = bins1, range=range1, facecolor='red',alpha = 0.35, label="XGB (with a cut > %.2f"%cut+')')
-    ax1.set_xlabel('Mass in GeV', fontsize = 15)
-    ax1.set_ylabel('Counts ', fontsize = 15, color=color)
+    ax1.set_xlabel('Mass in GeV', fontsize = 8)
+    ax1.set_ylabel('Counts ', fontsize = 8, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
-    ax1.tick_params(axis='both', which='major', labelsize=15)
-    ax1.legend( fontsize = 18,loc='upper right' )
+    ax1.tick_params(axis='both', which='major', labelsize=8)
+    ax1.legend( fontsize = 8,loc='upper right' )
 
-    plt.title("The original sample's Invariant Mass along with mass after selection of XGB", fontsize = 15)
+    plt.title("The original sample's Invariant Mass along with mass after selection of XGB", fontsize = 10)
     #plt.text(0.02, 0.1, r'cut > %.4f'%cut, fontsize=15)
     plt.show()
     fig.tight_layout()
