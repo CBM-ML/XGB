@@ -88,7 +88,7 @@ def preds_prob(df, preds, true, dataset, output_path):
     ax.tick_params(axis='both', which='minor', labelsize=16)
     plt.show()
     fig.tight_layout()
-    fig.savefig(str(output_path)+'/test_best.png')
+    fig.savefig(str(output_path)+'/test_best_pred.png')
 
 
 """
@@ -228,4 +228,4 @@ def cut_visualization(df, variable,cut, output_path, range1=(1.09, 1.19), bins1=
     #plt.text(0.02, 0.1, r'cut > %.4f'%cut, fontsize=15)
     plt.show()
     fig.tight_layout()
-    fig.savefig(str(output_path)+"/test_best.png")
+    fig.savefig(str(output_path)+"/test_best_cut_inv_mass.png")

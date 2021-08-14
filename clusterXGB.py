@@ -348,7 +348,7 @@ for cut in cuts1:
         new_log_x.append(cut)
 
 
-pdf_cuts = PdfPages(output_path+'/'+'dist_cuts.pdf')
+pdf_cuts = PdfPages(output_path+'/'+'dist_cuts_urqmd.pdf')
 for feat in new_log_x:
     hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s, feat, pdf_cuts)
 
