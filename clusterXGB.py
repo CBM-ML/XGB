@@ -295,41 +295,33 @@ CM_plot(test_best, bst_test, output_path)
 dfs_orig = deploy_data[deploy_data['issignal']==1]
 dfb_orig = deploy_data[deploy_data['issignal']==0]
 
-x_train_all['issignalXGB'] = bst_train['xgb_preds'].values
-x_train_all['xgb_preds1'] = ((x_train_all['issignalXGB']>train_best)*1)
-
-x_test_all['issignalXGB'] = bst_test['xgb_preds'].values
-x_test_all['xgb_preds1'] = ((x_test_all['issignalXGB']>test_best)*1)
 
 
-deploy_data['issignalXGB'] = bst_deploy['xgb_preds'].values
-deploy_data['xgb_preds1'] = ((deploy_data['issignalXGB']>test_best)*1)
+def df_distribution(df, bst_df, df_best):
+    df['issignalXGB'] = bst_df['xgb_preds'].values
+    df['xgb_preds1'] = ((df['issignalXGB']>df_best)*1)
 
 
-dfs_cut_train = x_train_all[(x_train_all['xgb_preds1']==1) & (x_train_all['issignal']==1)]
-dfb_cut_train = x_train_all[(x_train_all['xgb_preds1']==1) & (x_train_all['issignal']==0)]
+    dfs_cut = df[(df['xgb_preds1']==1) & (df['issignal']==1)]
+    dfb_cut = df[(df['xgb_preds1']==1) & (df['issignal']==0)]
 
-difference_s_train = pd.concat([dfs_orig, dfs_cut_train]).drop_duplicates(keep=False)
+    difference_s = pd.concat([dfs_orig, dfs_cut]).drop_duplicates(keep=False)
+
+    return dfs_cut, dfb_cut, difference_s
 
 
 
-dfs_cut_test = x_test_all[(x_test_all['xgb_preds1']==1) & (x_test_all['issignal']==1)]
-dfb_cut_test = x_test_all[(x_test_all['xgb_preds1']==1) & (x_test_all['issignal']==0)]
-
-difference_s_test = pd.concat([dfs_orig, dfs_cut_test]).drop_duplicates(keep=False)
+dfs_cut_train, dfb_cut_train, difference_s_train = df_distribution(x_train_all,
+ bst_train, train_best)
 
 
-dfs_cut_d = deploy_data[(deploy_data['xgb_preds1']==1) & (deploy_data['issignal']==1)]
-dfb_cut_d = deploy_data[(deploy_data['xgb_preds1']==1) & (deploy_data['issignal']==0)]
+dfs_cut_test, dfb_cut_test, difference_s_test = df_distribution(x_test_all,
+ bst_test, test_best)
 
-difference_s_d = pd.concat([dfs_orig, dfs_cut_d]).drop_duplicates(keep=False)
 
-# print("x_deploy: ", len(deploy_data))
-# print("dfs_orig: ", len(dfs_orig))
-# print("dfb_orig: ", len(dfb_orig))
-#
-# print("dfs_cut: ", len(dfs_cut))
-# print("difference: ", len(difference_s))
+dfs_cut_d, dfb_cut_d, difference_s_d = df_distribution(deploy_data,
+ bst_deploy, test_best)
+
 
 non_log_x = ['cosineneg', 'cosinepos', 'cosinetopo',  'mass', 'pT', 'rapidity',
  'phi', 'eta', 'x', 'y','z', 'px', 'py', 'pz', 'l', 'ldl']
@@ -350,7 +342,7 @@ pdf_cuts_deploy = PdfPages(output_path+'/'+'dist_cuts_urqmd_deploy.pdf')
 
 
 
-cut_visualization(deploy_data,'issignalXGB',test_best, output_path)
+# cut_visualization(deploy_data,'issignalXGB',test_best, output_path)
 
 def variables_distribution(dfs_orig, dfb_orig, dfs_cut, dfb_cut, cuts_plot, pdf_cuts):
     difference_s = pd.concat([dfs_orig, dfs_cut]).drop_duplicates(keep=False)
