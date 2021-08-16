@@ -302,16 +302,16 @@ dfs_orig_train, dfb_orig_train = original_SB(x_train_all)
 dfs_orig_test, dfb_orig_test = original_SB(x_test_all)
 dfs_orig_d, dfb_orig_d = original_SB(deploy_data)
 
-# dfs_orig = deploy_data[deploy_data['issignal']==1]
-# dfb_orig = deploy_data[deploy_data['issignal']==0]
+dfs_orig = deploy_data[deploy_data['issignal']==1]
+dfb_orig = deploy_data[deploy_data['issignal']==0]
 
-# vars_to_draw_corr = vars(dfs_orig, 'mass')
-#
-# corr_signal, corr_signal_errors = calculate_correlation(dfs_orig, vars_to_draw_corr, 'mass')
-# corr_bg, corr_bg_errors = calculate_correlation(dfb_orig, vars_to_draw_corr, 'mass')
-#
-# plot1Dcorrelation(vars_to_draw_corr,'mass', corr_signal, corr_signal_errors,
-#  corr_bg, corr_bg_errors, output_path)
+vars_to_draw_corr = vars(dfs_orig, 'mass')
+
+corr_signal, corr_signal_errors = calculate_correlation(dfs_orig, vars_to_draw_corr, 'mass')
+corr_bg, corr_bg_errors = calculate_correlation(dfb_orig, vars_to_draw_corr, 'mass')
+
+plot1Dcorrelation(vars_to_draw_corr,'mass', corr_signal, corr_signal_errors,
+ corr_bg, corr_bg_errors, output_path)
 
 
 
