@@ -26,6 +26,7 @@ import sys
 import os
 
 from distributions.var_distr import hist_variables
+from distributions.var1Dcorr import vars, calculate_correlation, plot1Dcorrelation
 from matplotlib.backends.backend_pdf import PdfPages
 
 
@@ -290,10 +291,27 @@ def CM_plot(best, x, output_path):
 
 CM_plot(test_best, bst_test, output_path)
 
+def original_SB(df):
+    dfs_orig = df[df['issignal']==1]
+    dfb_orig = df[df['issignal']==0]
+
+    return dfs_orig, dfb_orig
 
 
-dfs_orig = deploy_data[deploy_data['issignal']==1]
-dfb_orig = deploy_data[deploy_data['issignal']==0]
+dfs_orig_train, dfb_orig_train = original_SB(x_train_all)
+dfs_orig_test, dfb_orig_test = original_SB(x_test_all)
+dfs_orig_d, dfb_orig_d = original_SB(deploy_data)
+
+# dfs_orig = deploy_data[deploy_data['issignal']==1]
+# dfb_orig = deploy_data[deploy_data['issignal']==0]
+
+# vars_to_draw_corr = vars(dfs_orig, 'mass')
+#
+# corr_signal, corr_signal_errors = calculate_correlation(dfs_orig, vars_to_draw_corr, 'mass')
+# corr_bg, corr_bg_errors = calculate_correlation(dfb_orig, vars_to_draw_corr, 'mass')
+#
+# plot1Dcorrelation(vars_to_draw_corr,'mass', corr_signal, corr_signal_errors,
+#  corr_bg, corr_bg_errors, output_path)
 
 
 
@@ -305,21 +323,20 @@ def df_distribution(df, bst_df, df_best):
     dfs_cut = df[(df['xgb_preds1']==1) & (df['issignal']==1)]
     dfb_cut = df[(df['xgb_preds1']==1) & (df['issignal']==0)]
 
-    difference_s = pd.concat([dfs_orig, dfs_cut]).drop_duplicates(keep=False)
 
-    return dfs_cut, dfb_cut, difference_s
-
+    return dfs_cut, dfb_cut
 
 
-dfs_cut_train, dfb_cut_train, difference_s_train = df_distribution(x_train_all,
+
+dfs_cut_train, dfb_cut_train = df_distribution(x_train_all,
  bst_train, train_best)
 
 
-dfs_cut_test, dfb_cut_test, difference_s_test = df_distribution(x_test_all,
+dfs_cut_test, dfb_cut_test = df_distribution(x_test_all,
  bst_test, test_best)
 
 
-dfs_cut_d, dfb_cut_d, difference_s_d = df_distribution(deploy_data,
+dfs_cut_d, dfb_cut_d = df_distribution(deploy_data,
  bst_deploy, test_best)
 
 
@@ -340,12 +357,10 @@ pdf_cuts_test = PdfPages(output_path+'/'+'dist_cuts_urqmd_test.pdf')
 pdf_cuts_deploy = PdfPages(output_path+'/'+'dist_cuts_urqmd_deploy.pdf')
 
 
-
-
-# cut_visualization(deploy_data,'issignalXGB',test_best, output_path)
+cut_visualization(deploy_data,'issignalXGB',test_best, output_path)
 
 def variables_distribution(dfs_orig, dfb_orig, dfs_cut, dfb_cut, cuts_plot, pdf_cuts):
-    difference_s = pd.concat([dfs_orig, dfs_cut]).drop_duplicates(keep=False)
+    difference_s = pd.concat([dfs_orig[cuts1], dfs_cut[cuts1]]).drop_duplicates(keep=False)
     non_log_x = ['cosineneg', 'cosinepos', 'cosinetopo',  'mass', 'pT', 'rapidity',
      'phi', 'eta', 'x', 'y','z', 'px', 'py', 'pz', 'l', 'ldl']
 
@@ -382,6 +397,6 @@ def variables_distribution(dfs_orig, dfb_orig, dfs_cut, dfb_cut, cuts_plot, pdf_
 
     pdf_cuts.close()
 
-variables_distribution(dfs_orig, dfb_orig, dfs_cut_train, dfb_cut_train, cuts1, pdf_cuts_train)
-variables_distribution(dfs_orig, dfb_orig, dfs_cut_test, dfb_cut_test, cuts1, pdf_cuts_test)
-variables_distribution(dfs_orig, dfb_orig, dfs_cut_d, dfb_cut_d, cuts1, pdf_cuts_deploy)
+variables_distribution(dfs_orig_train, dfb_orig_train, dfs_cut_train, dfb_cut_train, cuts1, pdf_cuts_train)
+variables_distribution(dfs_orig_test, dfb_orig_test, dfs_cut_test, dfb_cut_test, cuts1, pdf_cuts_test)
+variables_distribution(dfs_orig_d, dfb_orig_d, dfs_cut_d, dfb_cut_d, cuts1, pdf_cuts_deploy)

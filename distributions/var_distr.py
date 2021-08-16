@@ -88,7 +88,7 @@ def hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s,feature, p
 
 
     ax[2].hist(difference_s[feature], label = 'signal', bins = 500, alpha = 0.4, color = 'blue')
-    ax[2].legend(shadow=True,title = 'signal difference',
+    ax[2].legend(shadow=True,title ='S samples: '+str(len(difference_s)) +'\nsignal difference',
                 title_fontsize=15, fontsize =15, bbox_to_anchor=(1.05, 1),
                 loc='upper left', prop=fontP,)
 
