@@ -297,7 +297,6 @@ deploy_data['issignalXGB'] = bst_deploy['xgb_preds'].values
 deploy_data['xgb_preds1'] = ((deploy_data['issignalXGB']>test_best)*1)
 
 
-
 dfs_orig = deploy_data[deploy_data['issignal']==1]
 dfb_orig = deploy_data[deploy_data['issignal']==0]
 
@@ -324,34 +323,50 @@ new_log_x = []
 cuts1 = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance',  'ldl',
    'mass','pT']
 
-for cut in cuts1:
-    if cut in log_x:
-        dfs_orig[cut+'_log'] = np.log(dfs_orig[cut])
-        dfb_orig[cut+'_log'] = np.log(dfb_orig[cut])
 
-        dfs_cut[cut+'_log'] = np.log(dfs_cut[cut])
-        dfb_cut[cut+'_log'] = np.log(dfb_cut[cut])
+pdf_cuts_deploy = PdfPages(output_path+'/'+'dist_cuts_urqmd_deploy.pdf')
 
-        difference_s[cut+'_log'] = np.log(difference_s[cut])
-
-        new_log_x.append(cut+'_log')
-
-
-        dfs_orig = dfs_orig.drop([cut], axis=1)
-        dfb_orig = dfb_orig.drop([cut], axis=1)
-
-        dfs_cut = dfs_cut.drop([cut], axis=1)
-        dfb_cut = dfb_cut.drop([cut], axis=1)
-        difference_s = difference_s.drop([cut], axis=1)
-
-    if cut in non_log_x:
-        new_log_x.append(cut)
-
-
-pdf_cuts = PdfPages(output_path+'/'+'dist_cuts_urqmd.pdf')
-for feat in new_log_x:
-    hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s, feat, pdf_cuts)
-
-pdf_cuts.close()
 
 cut_visualization(deploy_data,'issignalXGB',test_best, output_path)
+
+
+def variables_distribution(dfs_orig, dfb_orig, dfs_cut, dfb_cut, cuts_plot, pdf_cuts):
+    difference_s = pd.concat([dfs_orig, dfs_cut]).drop_duplicates(keep=False)
+    non_log_x = ['cosineneg', 'cosinepos', 'cosinetopo',  'mass', 'pT', 'rapidity',
+     'phi', 'eta', 'x', 'y','z', 'px', 'py', 'pz', 'l', 'ldl']
+
+    log_x = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance']
+
+    new_log_x = []
+
+    for cut in cuts_plot:
+        if cut in log_x:
+            dfs_orig[cut+'_log'] = np.log(dfs_orig[cut])
+            dfb_orig[cut+'_log'] = np.log(dfb_orig[cut])
+
+            dfs_cut[cut+'_log'] = np.log(dfs_cut[cut])
+            dfb_cut[cut+'_log'] = np.log(dfb_cut[cut])
+
+            difference_s[cut+'_log'] = np.log(difference_s[cut])
+
+            new_log_x.append(cut+'_log')
+
+
+            dfs_orig = dfs_orig.drop([cut], axis=1)
+            dfb_orig = dfb_orig.drop([cut], axis=1)
+
+            dfs_cut = dfs_cut.drop([cut], axis=1)
+            dfb_cut = dfb_cut.drop([cut], axis=1)
+            difference_s = difference_s.drop([cut], axis=1)
+
+        if cut in non_log_x:
+            new_log_x.append(cut)
+
+
+    # pdf_cuts = PdfPages(output_path+'/'+'dist_cuts_urqmd_deploy.pdf')
+    for feat in new_log_x:
+        hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s, feat, pdf_cuts)
+
+    pdf_cuts.close()
+
+variables_distribution(dfs_orig, dfb_orig, dfs_cut, dfb_cut, cuts1, pdf_cuts_deploy)
