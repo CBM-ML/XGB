@@ -410,3 +410,9 @@ pT_range = [-0.5, 3]
 
 pT_vs_rapidity(dfs_orig_train, dfs_cut_train, difference_df(dfs_orig_train, dfs_cut_train, cuts1),
  1, rapidity_range_clean, pT_range, output_path, ' train')
+
+pT_vs_rapidity(dfs_orig_test, dfs_cut_test, difference_df(dfs_orig_test, dfs_cut_test, cuts1),
+ 1, rapidity_range_clean, pT_range, output_path, ' test')
+
+pT_vs_rapidity(dfs_orig_d, dfs_cut_d, difference_df(dfs_orig_d, dfs_cut_d, cuts1),
+  1, rapidity_range_clean, pT_range, output_path, ' deploy')
