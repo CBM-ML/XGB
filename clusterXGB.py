@@ -3,7 +3,7 @@ import pandas as pd
 import xgboost as xgb
 import matplotlib.pyplot as plt
 
-from library.CBM_ML.tree_importer import tree_importer, new_labels, quality_cuts
+from library.CBM_ML.tree_importer import tree_importer
 from library.CBM_ML.plot_tools import AMS, preds_prob,plot_confusion_matrix, cut_visualization
 
 from sklearn.model_selection import train_test_split
@@ -27,6 +27,7 @@ import os
 
 from distributions.var_distr import hist_variables
 from distributions.var1Dcorr import vars, calculate_correlation, plot1Dcorrelation
+from distributions.pt_rapidity import pT_vs_rapidity
 from matplotlib.backends.backend_pdf import PdfPages
 
 
@@ -82,8 +83,6 @@ def data_selection(signal_path, bgr_path, tree, threads):
     signal= tree_importer(signal_path,tree_name, threads)
     df_urqmd = tree_importer(bgr_path, tree_name, threads)
 
-    signal = new_labels(signal)
-    df_urqmd = new_labels(df_urqmd)
 
     signal_selected = signal
 
@@ -157,7 +156,6 @@ gc.collect()
 # open deploy dataframe with x and y as well
 def open_deploy_data(deploy_path, tree, threads):
     deploy_data= tree_importer(deploy_path,tree_name, threads)
-    deploy_data = new_labels(deploy_data)
 
     return deploy_data
 
@@ -347,7 +345,7 @@ log_x = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance']
 
 new_log_x = []
 
-cuts1 = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance',  'ldl',
+cuts1 = ['chi2geo', 'chi2primneg', 'chi2primpos', 'distance',  'ldl', 'rapidity',
    'mass','pT']
 
 
@@ -400,3 +398,15 @@ def variables_distribution(dfs_orig, dfb_orig, dfs_cut, dfb_cut, cuts_plot, pdf_
 variables_distribution(dfs_orig_train, dfb_orig_train, dfs_cut_train, dfb_cut_train, cuts1, pdf_cuts_train)
 variables_distribution(dfs_orig_test, dfb_orig_test, dfs_cut_test, dfb_cut_test, cuts1, pdf_cuts_test)
 variables_distribution(dfs_orig_d, dfb_orig_d, dfs_cut_d, dfb_cut_d, cuts1, pdf_cuts_deploy)
+
+
+def difference_df(df_orig, df_cut, cut):
+    return pd.concat([df_orig[cut], df_cut[cut]]).drop_duplicates(keep=False)
+
+
+rapidity_range_unclean = [-1.5, 1.5]
+rapidity_range_clean = [-0.5, 5]
+pT_range = [-0.5, 3]
+
+pT_vs_rapidity(dfs_orig_train, dfs_cut_train, difference_df(dfs_orig_train, dfs_cut_train, cuts1),
+ 1, rapidity_range_clean, pT_range, output_path, ' train')
