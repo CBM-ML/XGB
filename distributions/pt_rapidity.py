@@ -18,7 +18,7 @@ mpl.rc('figure', max_open_warning = 0)
 
 
 def pT_vs_rapidity(df_orig, df_cut, difference, sign, x_range, y_range, output_path, data_name):
-    fig, axs = plt.subplots(ncols=3, figsize=(15, 4))
+    fig, axs = plt.subplots(1,3, figsize=(15, 4), gridspec_kw={'width_ratios': [1, 1, 1]})
 
 
     if sign ==0:
@@ -29,10 +29,17 @@ def pT_vs_rapidity(df_orig, df_cut, difference, sign, x_range, y_range, output_p
         s_label = 'Signal'
         m = 1
 
+    axs[0].set_aspect(aspect = 'auto')
+    axs[1].set_aspect(aspect = 'auto')
+    axs[2].set_aspect(aspect = 'auto')
+
     rej = round((1 -  (df_cut.shape[0] / df_orig.shape[0])) * 100, 5)
     diff = df_orig.shape[0] - df_cut.shape[0]
-    axs[1].legend(shadow=True,title ='ML cut rejects \n'+ str(rej) +'% of '+ s_label,
-     fontsize =15)
+    axs[0].legend(shadow=True, title =str(len(df_orig))+' samples', fontsize =14)
+    axs[1].legend(shadow=True, title =str(len(df_cut))+' samples', fontsize =14)
+    axs[2].legend(shadow=True, title ='ML cut rejects \n'+ str(rej) +'% of '+ s_label +
+    '\n ' + str(diff)+ ' samples were rejected ',
+     fontsize =14)
 
     counts0, xedges0, yedges0, im0 = axs[0].hist2d(df_orig['rapidity'], df_orig['pT'] , range = [x_range, y_range], bins=100,
                 norm=mpl.colors.LogNorm(), cmap=plt.cm.rainbow)
@@ -79,11 +86,11 @@ def pT_vs_rapidity(df_orig, df_cut, difference, sign, x_range, y_range, output_p
     counts2, xedges2, yedges2, im2 = axs[2].hist2d(difference['rapidity'], difference['pT'] , range = [x_range, y_range], bins=100,
                 norm=mpl.colors.LogNorm(), cmap=plt.cm.rainbow)
 
-    axs[2].set_title(s_label + ' candidates after ML cut '+data_name, fontsize = 16)
+    axs[2].set_title(s_label + ' difference ', fontsize = 16)
     axs[2].set_xlabel('rapidity', fontsize=15)
     axs[2].set_ylabel('pT, GeV', fontsize=15)
 
-    mpl.pyplot.colorbar(im1, ax = axs[1])
+    mpl.pyplot.colorbar(im1, ax = axs[2])
 
 
 
