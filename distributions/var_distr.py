@@ -31,7 +31,6 @@ def hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s,feature, p
             name of pdf document with distributions
     """
 
-    # fig, ax = plt.subplots(figsize=(20, 10))
 
     fig, ax = plt.subplots(3, figsize=(20, 10))
 
