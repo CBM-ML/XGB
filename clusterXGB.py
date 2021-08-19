@@ -28,6 +28,7 @@ import os
 from distributions.var_distr import hist_variables
 from distributions.var1Dcorr import vars, calculate_correlation, plot1Dcorrelation
 from distributions.pt_rapidity import pT_vs_rapidity
+from distributions.twoD_mass_pT import plot2D
 from matplotlib.backends.backend_pdf import PdfPages
 
 
@@ -313,6 +314,50 @@ plot1Dcorrelation(vars_to_draw_corr,'mass', corr_signal, corr_signal_errors,
 
 
 
+
+pdf_2d_mass_feat = PdfPages(output_path+'/'+'2d_mass_feat_train.pdf')
+# for var in vars_to_draw_corr:
+#     plot2D(dfs_orig_train, 'mass', var, [1.108, 1.1227], [dfs_orig_train[var].min(),
+#     dfs_orig_train[var].min()], pdf_2d_mass_feat)
+#
+# pdf_2d_mass_feat.close()
+
+
+def dist2D(df, vars,x_range, pdf):
+
+    df_new = df.copy()
+
+    non_log_x = ['cosineneg', 'cosinepos', 'cosinetopo',  'mass', 'pT', 'rapidity',
+     'phi', 'eta', 'x', 'y','z', 'px', 'py', 'pz', 'l', 'ldl']
+
+    log_x = ['chi2geo', 'chi2primneg', 'chi2primpos', 'chi2topo', 'distance']
+
+    new_log_x = []
+
+    for var in vars:
+        if var in log_x:
+            df_new[var+'_log'] = np.log(df_new[var])
+            df_new = df_new.drop([var], axis=1)
+            new_log_x.append(var+'_log')
+
+        if var in non_log_x:
+            new_log_x.append(var)
+
+    print(df_new.columns)
+    print("DF: ", df_new)
+    print("new log_x: ", new_log_x)
+
+    for feat in new_log_x:
+
+        plot2D(df_new, 1, 'mass', feat, x_range,[df_new[feat].min(),
+        df_new[feat].max()], pdf)
+
+
+    pdf.close()
+
+dist2D(dfs_orig_train,  ['chi2geo', 'chi2primneg', 'chi2primpos', 'distance',  'ldl', 'rapidity',
+   'pT'], [1.108, 1.1227], pdf_2d_mass_feat)
+
 def df_distribution(df, bst_df, df_best):
     df['issignalXGB'] = bst_df['xgb_preds'].values
     df['xgb_preds1'] = ((df['issignalXGB']>df_best)*1)
@@ -404,15 +449,15 @@ def difference_df(df_orig, df_cut, cut):
     return pd.concat([df_orig[cut], df_cut[cut]]).drop_duplicates(keep=False)
 
 
-rapidity_range_unclean = [-1.5, 1.5]
-rapidity_range_clean = [-0.5, 5]
-pT_range = [-0.5, 3]
-
-pT_vs_rapidity(dfs_orig_train, dfs_cut_train, difference_df(dfs_orig_train, dfs_cut_train, cuts1),
- 1, rapidity_range_clean, pT_range, output_path, ' train')
-
-pT_vs_rapidity(dfs_orig_test, dfs_cut_test, difference_df(dfs_orig_test, dfs_cut_test, cuts1),
- 1, rapidity_range_clean, pT_range, output_path, ' test')
-
-pT_vs_rapidity(dfs_orig_d, dfs_cut_d, difference_df(dfs_orig_d, dfs_cut_d, cuts1),
-  1, rapidity_range_clean, pT_range, output_path, ' deploy')
+# rapidity_range_unclean = [-1.5, 1.5]
+# rapidity_range_clean = [-0.5, 5]
+# pT_range = [-0.5, 3]
+#
+# pT_vs_rapidity(dfs_orig_train, dfs_cut_train, difference_df(dfs_orig_train, dfs_cut_train, cuts1),
+#  1, rapidity_range_clean, pT_range, output_path, ' train')
+#
+# pT_vs_rapidity(dfs_orig_test, dfs_cut_test, difference_df(dfs_orig_test, dfs_cut_test, cuts1),
+#  1, rapidity_range_clean, pT_range, output_path, ' test')
+#
+# pT_vs_rapidity(dfs_orig_d, dfs_cut_d, difference_df(dfs_orig_d, dfs_cut_d, cuts1),
+#   1, rapidity_range_clean, pT_range, output_path, ' deploy')
