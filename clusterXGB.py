@@ -257,6 +257,12 @@ train_best, test_best = AMS(y_train, bst_train['xgb_preds'],y_test, bst_test['xg
 #The first argument should be a data frame, the second a column in it, in the form 'preds'
 preds_prob(bst_test,'xgb_preds', 'issignal','test', output_path)
 
+xgb.plot_tree(bst, num_trees=0)
+fig = plt.gcf()
+fig.set_size_inches(150, 100)
+fig.savefig(output_path+'/tree.png')
+
+
 def CM_plot(best, x, output_path):
     """
     Plots confusion matrix. A Confusion Matrix C is such that Cij is equal to
