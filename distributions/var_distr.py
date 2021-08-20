@@ -52,7 +52,7 @@ def hist_variables(sample, dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s,fe
     ax[0].xaxis.set_tick_params(labelsize=15)
     ax[0].yaxis.set_tick_params(labelsize=15)
 
-    ax[0].set_title(str(feature) + ' MC ', fontsize = 25)
+    ax[0].set_title(str(feature) + ' MC '+ sample, fontsize = 25)
     ax[0].set_xlabel(feature, fontsize = 25)
 
     if feature!='mass':
@@ -97,7 +97,7 @@ def hist_variables(sample, dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s,fe
     ax[2].xaxis.set_tick_params(labelsize=15)
     ax[2].yaxis.set_tick_params(labelsize=15)
 
-    ax[2].set_title(feature + ' MC ', fontsize = 25)
+    ax[2].set_title(feature + ' MC '+ sample, fontsize = 25)
     ax[2].set_xlabel(feature, fontsize = 25)
 
     if feature!='mass':
