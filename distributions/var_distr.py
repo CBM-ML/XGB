@@ -15,7 +15,7 @@ import matplotlib as mpl
 
 mpl.rc('figure', max_open_warning = 0)
 
-def hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s,feature, pdf_key):
+def hist_variables(sample, dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s,feature, pdf_key):
     """
     Applied quality cuts and created distributions for all the features in pdf
     file
@@ -75,7 +75,7 @@ def hist_variables(dfs_orig, dfb_orig, dfs_cut, dfb_cut, difference_s,feature, p
     ax[1].xaxis.set_tick_params(labelsize=15)
     ax[1].yaxis.set_tick_params(labelsize=15)
 
-    ax[1].set_title(feature + ' MC ', fontsize = 25)
+    ax[1].set_title(feature + ' MC '+ sample, fontsize = 25)
     ax[1].set_xlabel(feature, fontsize = 25)
 
     if feature!='mass':
