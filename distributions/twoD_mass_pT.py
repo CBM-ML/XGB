@@ -5,7 +5,7 @@ import seaborn as sn
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mpl
 
-def plot2D(df, sgn,x_axis_value, y_axis_value, range_x, range_y, pdf_key):
+def plot2D(df, sample, sgn,x_axis_value, y_axis_value, range_x, range_y, pdf_key):
     """
 
     Plots 2-D histogram.
@@ -32,18 +32,16 @@ def plot2D(df, sgn,x_axis_value, y_axis_value, range_x, range_y, pdf_key):
 
 
     if sgn==1:
-        plt.title('Signal candidates, I love them', fontsize = 25)
+        plt.title('Signal candidates ' + sample, fontsize = 25)
 
     if sgn==0:
-        plt.title('Background candidates', fontsize = 25)
+        plt.title('Background candidates' + sample, fontsize = 25)
 
 
     plt.xlabel(x_axis_value+unit, fontsize=25)
     plt.ylabel(y_axis_value, fontsize=25)
 
-    plt.rcParams['font.size'] = '25'
-    for label in(axs.get_xticklabels() + axs.get_yticklabels()):
-        label.set_fontsize(25)
+
 
     mpl.pyplot.colorbar()
 
