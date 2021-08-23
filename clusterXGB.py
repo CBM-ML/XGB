@@ -321,11 +321,12 @@ plot1Dcorrelation(vars_to_draw_corr,'mass', corr_signal, corr_signal_errors,
 
 
 
-pdf_2d_mass_feat = PdfPages(output_path+'/'+'2d_mass_feat_train.pdf')
+pdf_2d_mass_feat_sign = PdfPages(output_path+'/'+'2d_mass_feat_sign_train.pdf')
+pdf_2d_mass_feat_bgr = PdfPages(output_path+'/'+'2d_mass_feat_bgr_train.pdf')
 
 
 
-def dist2D(df, vars,x_range, pdf):
+def dist2D(df, vars,x_range, sign, pdf):
 
     df_new = df.copy()
 
@@ -348,14 +349,23 @@ def dist2D(df, vars,x_range, pdf):
 
     for feat in new_log_x:
 
-        plot2D(df_new, ' train',  1, 'mass', feat, x_range,[df_new[feat].min(),
+        plot2D(df_new, ' train',  sign, 'mass', feat, x_range,[df_new[feat].min(),
         df_new[feat].max()], pdf)
 
 
     pdf.close()
 
+
+
+
 dist2D(dfs_orig_train,  ['chi2geo', 'chi2primneg', 'chi2primpos', 'distance',  'ldl', 'rapidity',
-   'pT'], [1.108, 1.1227], pdf_2d_mass_feat)
+   'pT'], [1.108, 1.1227], 1, pdf_2d_mass_feat_sign)
+
+
+dist2D(dfb_orig_train,  ['chi2geo', 'chi2primneg', 'chi2primpos', 'distance',  'ldl', 'rapidity',
+   'pT'], [1, 1.5], 0, pdf_2d_mass_feat_bgr)
+
+
 
 def df_distribution(df, bst_df, df_best):
     df['issignalXGB'] = bst_df['xgb_preds'].values
@@ -465,3 +475,14 @@ pT_vs_rapidity(dfs_orig_test, dfs_cut_test, difference_df(dfs_orig_test, dfs_cut
 
 pT_vs_rapidity(dfs_orig_d, dfs_cut_d, difference_df(dfs_orig_d, dfs_cut_d, cuts1),
   1, rapidity_range_clean, pT_range, output_path, ' deploy')
+
+
+
+pT_vs_rapidity(dfb_orig_train, dfb_cut_train, difference_df(dfb_orig_train, dfb_cut_train, cuts1),
+ 0, rapidity_range_clean, pT_range, output_path, ' train')
+
+pT_vs_rapidity(dfb_orig_test, dfb_cut_test, difference_df(dfb_orig_test, dfb_cut_test, cuts1),
+ 0, rapidity_range_clean, pT_range, output_path, ' test')
+
+pT_vs_rapidity(dfs_orig_d, dfs_cut_d, difference_df(dfb_orig_d, dfb_cut_d, cuts1),
+  0, rapidity_range_clean, pT_range, output_path, ' deploy')
